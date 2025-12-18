@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+  }
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  background-color: #111827;
+  color: #ffffff;
+}
+
+body {
+  color: rgb(255 255 255 / 0.9);
+  background: #111827;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+@layer components {
+  /* Card component */
+  .card {
+    @apply bg-gray-800 border border-gray-700 rounded-lg shadow-lg;
+  }
+
+  /* Button components */
+  .btn-primary {
+    @apply bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors duration-200;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition-colors duration-200;
+  }
+
+  .btn-outline {
+    @apply border border-gray-600 text-gray-300 px-4 py-2 rounded hover:bg-gray-700 hover:text-white transition-colors duration-200;
+  }
+
+  /* Input component */
+  .input-field {
+    @apply bg-gray-700 border border-gray-600 text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent;
+  }
+
+  /* Sidebar item */
+  .sidebar-item {
+    @apply flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors duration-200;
+  }
+
+  .sidebar-item.active {
+    @apply bg-gray-700 text-white border-r-4 border-red-500;
+  }
+
+  /* Stat card */
+  .stat-card {
+    @apply bg-gray-800 border border-gray-700 rounded-lg p-6 shadow-lg;
+  }
+}
