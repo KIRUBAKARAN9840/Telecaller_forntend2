@@ -1,35 +1,15 @@
 {
   "pages": {
-    "/portal/telecaller/tracker/page": [
+    "/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/portal/telecaller/tracker/page.js"
-    ],
-    "/portal/telecaller/layout": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/portal/telecaller/layout.js"
+      "static/chunks/app/page.js"
     ],
     "/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
-    ],
-    "/portal/telecaller/calls/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/portal/telecaller/calls/page.js"
-    ],
-    "/portal/telecaller/dashboard/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/portal/telecaller/dashboard/page.js"
-    ],
-    "/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/page.js"
     ],
     "/portal/manager/dashboard/page": [
       "static/chunks/webpack.js",
@@ -56,15 +36,30 @@
       "static/chunks/main-app.js",
       "static/chunks/app/portal/manager/performance/page.js"
     ],
+    "/portal/manager/tracker/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/portal/manager/tracker/page.js"
+    ],
+    "/portal/telecaller/dashboard/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/portal/telecaller/dashboard/page.js"
+    ],
+    "/portal/telecaller/layout": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/portal/telecaller/layout.js"
+    ],
+    "/portal/telecaller/tracker/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/portal/telecaller/tracker/page.js"
+    ],
     "/portal/manager/assign-gym/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/portal/manager/assign-gym/page.js"
-    ],
-    "/_not-found/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/_not-found/page.js"
     ]
   }
 }

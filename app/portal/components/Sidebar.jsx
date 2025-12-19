@@ -19,7 +19,7 @@ export default function Sidebar({ isOpen, onClose, userRole }) {
   const managerMenuItems = [
     { name: 'Dashboard', href: '/portal/manager/dashboard', icon: Home },
     { name: 'Telecallers', href: '/portal/manager/telecallers', icon: Users },
-    { name: 'Gym Assignment', href: '/portal/manager/assignments', icon: Building2 },
+    { name: 'Tracker', href: '/portal/manager/tracker', icon: Target },
     { name: 'Performance', href: '/portal/manager/performance', icon: BarChart3 },
   ];
 
