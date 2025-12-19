@@ -1,9 +1,14 @@
 {
   "pages": {
-    "/page": [
+    "/portal/telecaller/tracker/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/page.js"
+      "static/chunks/app/portal/telecaller/tracker/page.js"
+    ],
+    "/portal/telecaller/layout": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/portal/telecaller/layout.js"
     ],
     "/layout": [
       "static/chunks/webpack.js",
@@ -11,25 +16,15 @@
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
     ],
-    "/portal/telecaller/dashboard/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/portal/telecaller/dashboard/page.js"
-    ],
-    "/portal/telecaller/layout": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/portal/telecaller/layout.js"
-    ],
     "/portal/telecaller/calls/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/portal/telecaller/calls/page.js"
     ],
-    "/portal/telecaller/tracker/page": [
+    "/portal/telecaller/dashboard/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/portal/telecaller/tracker/page.js"
+      "static/chunks/app/portal/telecaller/dashboard/page.js"
     ]
   }
 }
