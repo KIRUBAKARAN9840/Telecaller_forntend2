@@ -245,7 +245,7 @@ export default function ManagerTracker() {
                       <span className="text-gray-400">Telecaller:</span> {gym.telecaller_name || 'Unassigned'}
                     </p>
                     <p className="text-gray-300">
-                      <span className="text-gray-400">Phone:</span> {gym.contact_number}
+                      <span className="text-gray-400">GYM Contact:</span> {gym.contact_number}
                     </p>
                     {gym.address && (
                       <p className="text-gray-300">

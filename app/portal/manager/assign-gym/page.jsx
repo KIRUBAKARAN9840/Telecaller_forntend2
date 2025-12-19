@@ -10,8 +10,8 @@ import {
   User,
   Calendar,
   X,
-  UserMinus,
   Plus,
+  UserMinus,
 } from 'lucide-react';
 import api from '@/lib/axios';
 
@@ -42,9 +42,10 @@ export default function AssignGymPage() {
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
-  const [selectedGym, setSelectedGym] = useState(null);
+  const [selectedGyms, setSelectedGyms] = useState([]);
   const [showUnassignModal, setShowUnassignModal] = useState(false);
   const [unassignError, setUnassignError] = useState('');
+  const [showMultiSelectOptions, setShowMultiSelectOptions] = useState(false);
 
   useEffect(() => {
     if (!telecallerId) {
@@ -152,60 +153,126 @@ export default function AssignGymPage() {
   };
 
   const handleGymClick = (gym) => {
-    setSelectedGym({
-      ...gym,
-      isAssigned: isGymAssigned(gym.id),
-      assignment: getAssignmentDetails(gym.id)
-    });
-    setShowModal(true);
+    const isAssigned = isGymAssigned(gym.id);
+
+    if (isAssigned) {
+      // For assigned gyms, show details modal like before
+      setSelectedGyms([{
+        ...gym,
+        isAssigned: true,
+        assignment: getAssignmentDetails(gym.id)
+      }]);
+      setShowModal(true);
+    } else {
+      // For unassigned gyms, toggle selection
+      const gymId = gym.id;
+      setSelectedGyms(prev => {
+        const index = prev.findIndex(g => g.id === gymId);
+        if (index > -1) {
+          return prev.filter(g => g.id !== gymId);
+        } else {
+          return [...prev, {
+            ...gym,
+            isAssigned: false,
+            assignment: null
+          }];
+        }
+      });
+    }
   };
 
-  const handleAssignGym = async () => {
-    if (!selectedGym) return;
+  const handleAssignGyms = async () => {
+    if (selectedGyms.length === 0) return;
 
     setActionLoading(true);
     setError('');
     setSuccess('');
 
     try {
-      await api.post('/telecaller/manager/assign-gym', {
-        gym_id: selectedGym.id,
-        telecaller_id: telecallerId
-      });
+      // Assign all selected gyms
+      const unassignedGyms = selectedGyms.filter(gym => !gym.isAssigned);
+      const assignPromises = unassignedGyms.map(gym =>
+        api.post('/telecaller/manager/assign-gym', {
+          gym_id: gym.id,
+          telecaller_id: telecallerId
+        })
+      );
 
-      setSuccess(`Successfully assigned ${selectedGym.gym_name} to ${telecallerName}`);
+      await Promise.all(assignPromises);
+
+      setSuccess(`Successfully assigned ${unassignedGyms.length} gym${unassignedGyms.length > 1 ? 's' : ''} to ${decodeURIComponent(telecallerName || 'Telecaller')}`);
 
       // Refresh data
       await fetchAssignments();
       await fetchGyms();
 
       setShowModal(false);
-      setSelectedGym(null);
+      setSelectedGyms([]);
     } catch (error) {
-      setError(error.response?.data?.detail || 'Failed to assign gym');
+      setError(error.response?.data?.detail || 'Failed to assign gyms');
     } finally {
       setActionLoading(false);
     }
   };
 
+  const openAssignModal = () => {
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setSelectedGyms([]);
+  };
+
+  const selectMultipleGyms = (count) => {
+    const unassignedGyms = sortedGyms.filter(gym => !isGymAssigned(gym.id));
+    const alreadySelectedIds = selectedGyms.map(g => g.id);
+
+    // Get unassigned gyms that are not already selected
+    const availableGyms = unassignedGyms.filter(gym => !alreadySelectedIds.includes(gym.id));
+
+    // Select the requested number of gyms (or fewer if not enough available)
+    const toSelect = availableGyms.slice(0, Math.min(count, availableGyms.length));
+    const newGyms = toSelect.map(gym => ({
+      ...gym,
+      isAssigned: false,
+      assignment: null
+    }));
+
+    setSelectedGyms(prev => [...prev, ...newGyms]);
+    setShowMultiSelectOptions(false);
+  };
+
+  const getAvailableGymCount = () => {
+    const unassignedGyms = sortedGyms.filter(gym => !isGymAssigned(gym.id));
+    const alreadySelectedIds = selectedGyms.map(g => g.id);
+    const availableGyms = unassignedGyms.filter(gym => !alreadySelectedIds.includes(gym.id));
+    return availableGyms.length;
+  };
+
+  const unselectAllGyms = () => {
+    setSelectedGyms([]);
+  };
+
   const handleUnassignGym = () => {
-    if (!selectedGym || !selectedGym.isAssigned) return;
+    if (!selectedGyms[0] || !selectedGyms[0].isAssigned) return;
 
     // Check if the gym can be unassigned based on its current status
-    const currentStatus = selectedGym.assignment?.current_call_status || 'pending';
+    const currentStatus = selectedGyms[0].assignment?.current_call_status || 'pending';
     const allowedStatuses = ['pending', 'no_response'];
 
     if (!allowedStatuses.includes(currentStatus)) {
-      setUnassignError(`Cannot unassign gym. Current status is "${currentStatus}"`);
+      setUnassignError(`Cannot unassign gym. Current status is "${currentStatus}". Only gyms with status 'pending' or 'no_response' can be unassigned.`);
       setShowUnassignModal(true);
       return;
     }
 
+    setUnassignError('');
     setShowUnassignModal(true);
   };
 
   const confirmUnassignGym = async () => {
-    if (!selectedGym || !selectedGym.isAssigned) return;
+    if (!selectedGyms[0] || !selectedGyms[0].isAssigned) return;
 
     setActionLoading(true);
     setError('');
@@ -214,10 +281,10 @@ export default function AssignGymPage() {
 
     try {
       await api.post('/telecaller/manager/unassign-gym', {
-        gym_id: selectedGym.id
+        gym_id: selectedGyms[0].id
       });
 
-      setSuccess(`Successfully unassigned ${selectedGym.gym_name}`);
+      setSuccess(`Successfully unassigned ${selectedGyms[0].gym_name}`);
 
       // Refresh data
       await fetchAssignments();
@@ -225,7 +292,7 @@ export default function AssignGymPage() {
 
       setShowModal(false);
       setShowUnassignModal(false);
-      setSelectedGym(null);
+      setSelectedGyms([]);
     } catch (error) {
       setError(error.response?.data?.detail || 'Failed to unassign gym');
       setUnassignError(error.response?.data?.detail || 'Failed to unassign gym');
@@ -264,7 +331,7 @@ export default function AssignGymPage() {
         <h1 className="text-3xl font-bold text-white">
           Assign Gyms to {decodeURIComponent(telecallerName || 'Telecaller')}
         </h1>
-        <p className="text-gray-400 mt-2">Click on any gym to view details and assign/unassign</p>
+        <p className="text-gray-400 mt-2">Click on gyms to select them, then use the Assign button to assign selected gyms</p>
       </div>
 
       {/* Success/Error Messages */}
@@ -276,6 +343,105 @@ export default function AssignGymPage() {
       {error && (
         <div className="mb-4 p-4 bg-red-900/20 border border-red-800 text-red-400 rounded">
           {error}
+        </div>
+      )}
+
+      {/* Multi-select Actions Bar (appears when gyms are selected) */}
+      {selectedGyms.length > 0 && (
+        <div className="card p-4 mb-6">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center gap-3">
+              <span className="text-white font-medium">
+                {selectedGyms.length} gym{selectedGyms.length > 1 ? 's' : ''} selected
+              </span>
+              <button
+                onClick={unselectAllGyms}
+                className="text-gray-400 hover:text-white text-sm"
+              >
+                Unselect All
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {/* Multi-select dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowMultiSelectOptions(!showMultiSelectOptions)}
+                  className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors text-sm flex items-center gap-2"
+                >
+                  Quick Select
+                  <svg
+                    className={`w-4 h-4 transform transition-transform ${showMultiSelectOptions ? 'rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {showMultiSelectOptions && (
+                  <div className="absolute right-0 top-full mt-2 w-56 bg-gray-800 border border-gray-600 rounded-lg shadow-lg z-10">
+                    <div className="p-2">
+                      <div className="text-xs text-gray-400 px-3 py-1 mb-1">
+                        {getAvailableGymCount()} unassigned gyms available
+                      </div>
+                      {getAvailableGymCount() > 0 && (
+                        <>
+                          {getAvailableGymCount() >= 5 && (
+                            <button
+                              onClick={() => selectMultipleGyms(5)}
+                              className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 rounded"
+                            >
+                              Select 5 more
+                            </button>
+                          )}
+                          {getAvailableGymCount() >= 10 && (
+                            <button
+                              onClick={() => selectMultipleGyms(10)}
+                              className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 rounded"
+                            >
+                              Select 10 more
+                            </button>
+                          )}
+                          {getAvailableGymCount() >= 25 && (
+                            <button
+                              onClick={() => selectMultipleGyms(25)}
+                              className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 rounded"
+                            >
+                              Select 25 more
+                            </button>
+                          )}
+                          {getAvailableGymCount() >= 50 && (
+                            <button
+                              onClick={() => selectMultipleGyms(50)}
+                              className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 rounded"
+                            >
+                              Select 50 more
+                            </button>
+                          )}
+                          <button
+                            onClick={() => selectMultipleGyms(getAvailableGymCount())}
+                            className="w-full text-left px-3 py-2 text-sm text-green-400 hover:bg-gray-700 rounded font-medium"
+                          >
+                            Select All ({getAvailableGymCount()})
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <button
+                onClick={openAssignModal}
+                className="btn-primary flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Assign to {decodeURIComponent(telecallerName || 'Telecaller')}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -298,6 +464,7 @@ export default function AssignGymPage() {
         {sortedGyms.map((gym) => {
           const isAssigned = isGymAssigned(gym.id);
           const assignment = getAssignmentDetails(gym.id);
+          const isSelected = selectedGyms.some(g => g.id === gym.id);
 
           return (
             <div
@@ -305,7 +472,9 @@ export default function AssignGymPage() {
               onClick={() => handleGymClick(gym)}
               className={`card p-6 cursor-pointer transition-all hover:scale-105 ${
                 isAssigned
-                  ? 'opacity-60 bg-gray-800/50'
+                  ? 'opacity-60 bg-gray-800/50 hover:scale-100'
+                  : isSelected
+                  ? 'ring-2 ring-red-500 bg-red-900/20'
                   : 'hover:bg-gray-800/50'
               }`}
             >
@@ -313,11 +482,18 @@ export default function AssignGymPage() {
                 <div className="w-12 h-12 bg-red-600/20 rounded-lg flex items-center justify-center">
                   <Building2 className="w-6 h-6 text-red-400" />
                 </div>
-                {isAssigned && (
-                  <span className="px-2 py-1 bg-yellow-900/30 text-yellow-400 text-xs rounded-full">
-                    Assigned
-                  </span>
-                )}
+                <div className="flex items-center gap-2">
+                  {!isAssigned && isSelected && (
+                    <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+                      <Plus className="w-4 h-4 text-white transform rotate-45" />
+                    </div>
+                  )}
+                  {isAssigned && (
+                    <span className="px-2 py-1 bg-yellow-900/30 text-yellow-400 text-xs rounded-full">
+                      Assigned
+                    </span>
+                  )}
+                </div>
               </div>
 
               <h3 className="text-lg font-semibold text-white mb-2">{gym.gym_name}</h3>
@@ -396,107 +572,155 @@ export default function AssignGymPage() {
         </div>
       )}
 
-      {/* Assignment Details Modal */}
-      {showModal && selectedGym && (
+      {/* Assignment Confirmation Modal */}
+      {showModal && selectedGyms.length > 0 && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="card p-6 w-full max-w-md">
+          <div className="card p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-white">Gym Details</h3>
+              <h3 className="text-xl font-semibold text-white">
+                {selectedGyms[0]?.isAssigned ? 'Gym Details' : `Assign ${selectedGyms.length} Gym${selectedGyms.length > 1 ? 's' : ''} to ${decodeURIComponent(telecallerName || 'Telecaller')}`}
+              </h3>
               <button
-                onClick={() => {
-                  setShowModal(false);
-                  setSelectedGym(null);
-                }}
+                onClick={closeModal}
                 className="p-1 hover:bg-gray-700 rounded"
               >
                 <X className="w-5 h-5 text-gray-400" />
               </button>
             </div>
 
-            <div className="space-y-4 mb-6">
-              <div>
-                <h4 className="text-white font-medium text-lg">{selectedGym.gym_name}</h4>
-                <p className="text-gray-400">{selectedGym.city}</p>
-              </div>
-
-              <div className="text-sm text-gray-300">
-                <div className="flex items-center gap-2 mb-2">
-                  <Phone className="w-4 h-4" />
-                  <span>{selectedGym.contact_number}</span>
+            {selectedGyms[0]?.isAssigned ? (
+              // Single assigned gym details view (like before)
+              <div className="space-y-4 mb-6">
+                <div>
+                  <h4 className="text-white font-medium text-lg">{selectedGyms[0].gym_name}</h4>
+                  <p className="text-gray-400">{selectedGyms[0].city}</p>
                 </div>
-              </div>
 
-              {selectedGym.isAssigned && selectedGym.assignment && (
-                <div className="bg-yellow-900/20 border border-yellow-800 rounded-lg p-4">
-                  <h5 className="text-yellow-400 font-medium mb-2">Currently Assigned</h5>
-                  <div className="text-sm text-gray-300 space-y-1">
-                    <div className="flex items-center gap-2">
-                      <User className="w-4 h-4" />
-                      <span>To: {selectedGym.assignment.telecaller_name}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <User className="w-4 h-4" />
-                      <span>By: Manager ID {selectedGym.assignment.manager_id}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4" />
-                      <span>Date: {new Date(selectedGym.assignment.assigned_at).toLocaleDateString()}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-400">Status:</span>
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${
-                        selectedGym.assignment.current_call_status === 'pending' ? 'bg-gray-900/50 text-gray-400' :
-                        selectedGym.assignment.current_call_status === 'no_response' ? 'bg-gray-900/50 text-gray-400' :
-                        selectedGym.assignment.current_call_status === 'follow_up' ? 'bg-blue-900/50 text-blue-400' :
-                        selectedGym.assignment.current_call_status === 'converted' ? 'bg-green-900/50 text-green-400' :
-                        selectedGym.assignment.current_call_status === 'rejected' ? 'bg-red-900/50 text-red-400' :
-                        'bg-gray-700 text-gray-300'
-                      }`}>
-                        {selectedGym.assignment.current_call_status?.replace('_', ' ') || 'Pending'}
-                      </span>
-                    </div>
+                <div className="text-sm text-gray-300">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Phone className="w-4 h-4" />
+                    <span>{selectedGyms[0].contact_number}</span>
                   </div>
                 </div>
-              )}
-            </div>
+
+                {selectedGyms[0].assignment && (
+                  <div className="bg-yellow-900/20 border border-yellow-800 rounded-lg p-4">
+                    <h5 className="text-yellow-400 font-medium mb-2">Currently Assigned</h5>
+                    <div className="text-sm text-gray-300 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4" />
+                        <span>To: {selectedGyms[0].assignment.telecaller_name}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4" />
+                        <span>By: Manager ID {selectedGyms[0].assignment.manager_id}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4" />
+                        <span>Date: {new Date(selectedGyms[0].assignment.assigned_at).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-400">Status:</span>
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                          selectedGyms[0].assignment.current_call_status === 'pending' ? 'bg-gray-900/50 text-gray-400' :
+                          selectedGyms[0].assignment.current_call_status === 'no_response' ? 'bg-gray-900/50 text-gray-400' :
+                          selectedGyms[0].assignment.current_call_status === 'follow_up' ? 'bg-blue-900/50 text-blue-400' :
+                          selectedGyms[0].assignment.current_call_status === 'converted' ? 'bg-green-900/50 text-green-400' :
+                          selectedGyms[0].assignment.current_call_status === 'rejected' ? 'bg-red-900/50 text-red-400' :
+                          'bg-gray-700 text-gray-300'
+                        }`}>
+                          {selectedGyms[0].assignment.current_call_status?.replace('_', ' ') || 'Pending'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              // Multiple unassigned gyms for assignment
+              <div className="space-y-4 mb-6">
+                <div className="text-gray-300">
+                  <p>You have selected {selectedGyms.length} gym{selectedGyms.length > 1 ? 's' : ''} for assignment:</p>
+                </div>
+
+                {/* List of selected gyms */}
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {selectedGyms.map((gym) => (
+                    <div key={gym.id} className="bg-gray-800 rounded-lg p-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="text-white font-medium">{gym.gym_name}</h4>
+                          <p className="text-gray-400 text-sm">{gym.city || 'No location'}</p>
+                        </div>
+                        {gym.isAssigned ? (
+                          <span className="px-2 py-1 bg-yellow-900/30 text-yellow-400 text-xs rounded-full">
+                            Already Assigned
+                          </span>
+                        ) : (
+                          <span className="px-2 py-1 bg-green-900/30 text-green-400 text-xs rounded-full">
+                            Will be Assigned
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Warning about already assigned gyms */}
+                {selectedGyms.some(gym => gym.isAssigned) && (
+                  <div className="bg-yellow-900/20 border border-yellow-800 rounded-lg p-4">
+                    <p className="text-yellow-400 text-sm">
+                      Note: Some selected gyms are already assigned and will be skipped.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="flex gap-3">
               <button
-                onClick={() => {
-                  setShowModal(false);
-                  setSelectedGym(null);
-                }}
+                onClick={closeModal}
                 className="flex-1 px-4 py-2 border border-gray-600 text-gray-300 rounded hover:bg-gray-700"
               >
                 Close
               </button>
 
-              {!selectedGym.isAssigned ? (
-                <button
-                  onClick={handleAssignGym}
-                  disabled={actionLoading}
-                  className="flex-1 btn-primary flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  {actionLoading ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  ) : (
-                    <Plus className="w-4 h-4" />
-                  )}
-                  Assign to {decodeURIComponent(telecallerName || 'Telecaller')}
-                </button>
+              {selectedGyms[0]?.isAssigned ? (
+                // Assigned gym - show unassign button if status allows
+                (() => {
+                  const currentStatus = selectedGyms[0].assignment?.current_call_status || 'pending';
+                  const canUnassign = ['pending', 'no_response'].includes(currentStatus);
+                  return canUnassign ? (
+                    <button
+                      onClick={handleUnassignGym}
+                      disabled={actionLoading}
+                      className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      {actionLoading ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      ) : (
+                        <UserMinus className="w-4 h-4" />
+                      )}
+                      Unassign
+                    </button>
+                  ) : null;
+                })()
               ) : (
-                <button
-                  onClick={handleUnassignGym}
-                  disabled={actionLoading}
-                  className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  {actionLoading ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  ) : (
-                    <UserMinus className="w-4 h-4" />
-                  )}
-                  Unassign
-                </button>
+                // Unassigned gyms - show assign button
+                selectedGyms.some(gym => !gym.isAssigned) && (
+                  <button
+                    onClick={handleAssignGyms}
+                    disabled={actionLoading}
+                    className="flex-1 btn-primary flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    {actionLoading ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    ) : (
+                      <Plus className="w-4 h-4" />
+                    )}
+                    Assign {selectedGyms.filter(gym => !gym.isAssigned).length} Gym{selectedGyms.filter(gym => !gym.isAssigned).length > 1 ? 's' : ''}
+                  </button>
+                )
               )}
             </div>
           </div>
@@ -504,7 +728,7 @@ export default function AssignGymPage() {
       )}
 
       {/* Unassign Confirmation Modal */}
-      {showUnassignModal && selectedGym && (
+      {showUnassignModal && selectedGyms[0] && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="card p-6 w-full max-w-md">
             <div className="flex items-center justify-between mb-6">
@@ -530,7 +754,7 @@ export default function AssignGymPage() {
               ) : (
                 <>
                   <p className="text-gray-300">
-                    Are you sure you want to unassign <strong>{selectedGym.gym_name}</strong>?
+                    Are you sure you want to unassign <strong>{selectedGyms[0].gym_name}</strong>?
                   </p>
                   <p className="text-gray-400 text-sm">
                     This gym will become available for assignment to other telecallers.
