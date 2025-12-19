@@ -1,6 +1,0 @@
-{
-  "/page": "app/page.js",
-  "/portal/telecaller/dashboard/page": "app/portal/telecaller/dashboard/page.js",
-  "/portal/telecaller/tracker/page": "app/portal/telecaller/tracker/page.js",
-  "/portal/telecaller/calls/page": "app/portal/telecaller/calls/page.js"
-}
