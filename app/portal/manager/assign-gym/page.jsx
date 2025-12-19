@@ -14,6 +14,7 @@ import {
   UserMinus,
 } from 'lucide-react';
 import api from '@/lib/axios';
+import DatePicker from '@/app/portal/components/DatePicker';
 
 export default function AssignGymPage() {
   const searchParams = useSearchParams();
@@ -46,6 +47,7 @@ export default function AssignGymPage() {
   const [showUnassignModal, setShowUnassignModal] = useState(false);
   const [unassignError, setUnassignError] = useState('');
   const [showMultiSelectOptions, setShowMultiSelectOptions] = useState(false);
+  const [targetDate, setTargetDate] = useState('');
 
   useEffect(() => {
     if (!telecallerId) {
@@ -189,16 +191,14 @@ export default function AssignGymPage() {
     setSuccess('');
 
     try {
-      // Assign all selected gyms
+      // Assign all selected gyms using bulk endpoint
       const unassignedGyms = selectedGyms.filter(gym => !gym.isAssigned);
-      const assignPromises = unassignedGyms.map(gym =>
-        api.post('/telecaller/manager/assign-gym', {
-          gym_id: gym.id,
-          telecaller_id: telecallerId
-        })
-      );
 
-      await Promise.all(assignPromises);
+      const response = await api.post('/telecaller/manager/bulk-assign-gyms', {
+        telecaller_id: telecallerId,
+        gym_ids: unassignedGyms.map(gym => gym.id),
+        target_date: targetDate || null
+      });
 
       setSuccess(`Successfully assigned ${unassignedGyms.length} gym${unassignedGyms.length > 1 ? 's' : ''} to ${decodeURIComponent(telecallerName || 'Telecaller')}`);
 
@@ -208,6 +208,7 @@ export default function AssignGymPage() {
 
       setShowModal(false);
       setSelectedGyms([]);
+      setTargetDate('');
     } catch (error) {
       setError(error.response?.data?.detail || 'Failed to assign gyms');
     } finally {
@@ -222,6 +223,7 @@ export default function AssignGymPage() {
   const closeModal = () => {
     setShowModal(false);
     setSelectedGyms([]);
+    setTargetDate('');
   };
 
   const selectMultipleGyms = (count) => {
@@ -515,10 +517,16 @@ export default function AssignGymPage() {
                       <User className="w-3 h-3" />
                       <span>Assigned to: {assignment.telecaller_name}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-gray-400 text-xs">
+                    <div className="flex items-center gap-2 text-gray-400 text-xs mb-1">
                       <Calendar className="w-3 h-3" />
-                      <span>On: {new Date(assignment.assigned_at).toLocaleDateString()}</span>
+                      <span>Assigned: {new Date(assignment.assigned_at).toLocaleDateString()}</span>
                     </div>
+                    {assignment.target_date && (
+                      <div className="flex items-center gap-2 text-gray-400 text-xs">
+                        <Calendar className="w-3 h-3" />
+                        <span>Target: {new Date(assignment.target_date).toLocaleDateString()}</span>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -617,8 +625,14 @@ export default function AssignGymPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <Calendar className="w-4 h-4" />
-                        <span>Date: {new Date(selectedGyms[0].assignment.assigned_at).toLocaleDateString()}</span>
+                        <span>Assigned: {new Date(selectedGyms[0].assignment.assigned_at).toLocaleDateString()}</span>
                       </div>
+                      {selectedGyms[0].assignment.target_date && (
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4" />
+                          <span>Target: {new Date(selectedGyms[0].assignment.target_date).toLocaleDateString()}</span>
+                        </div>
+                      )}
                       <div className="flex items-center gap-2">
                         <span className="text-gray-400">Status:</span>
                         <span className={`px-2 py-1 rounded text-xs font-medium ${
@@ -674,6 +688,25 @@ export default function AssignGymPage() {
                     </p>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Date Picker for Assignment */}
+            {!selectedGyms[0]?.isAssigned && selectedGyms.some(gym => !gym.isAssigned) && (
+              <div className="space-y-2 mb-6">
+                <label className="block text-sm font-medium text-gray-300">
+                  <Calendar className="w-4 h-4 inline mr-2" />
+                  Target Date for Assignment
+                </label>
+                <DatePicker
+                  value={targetDate}
+                  onChange={setTargetDate}
+                  minDate={new Date()}
+                  maxDate={new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)} // Max 1 year from now
+                />
+                <p className="text-xs text-gray-400">
+                  Select the date for which this assignment is scheduled. Click "Today" for instant assignment.
+                </p>
               </div>
             )}
 
