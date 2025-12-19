@@ -11,36 +11,6 @@
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
     ],
-    "/portal/manager/dashboard/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/portal/manager/dashboard/page.js"
-    ],
-    "/portal/manager/layout": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/portal/manager/layout.js"
-    ],
-    "/portal/manager/telecallers/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/portal/manager/telecallers/page.js"
-    ],
-    "/portal/manager/assign-gym/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/portal/manager/assign-gym/page.js"
-    ],
-    "/portal/manager/assignments/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/portal/manager/assignments/page.js"
-    ],
-    "/portal/manager/performance/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/portal/manager/performance/page.js"
-    ],
     "/portal/telecaller/dashboard/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -51,20 +21,15 @@
       "static/chunks/main-app.js",
       "static/chunks/app/portal/telecaller/layout.js"
     ],
-    "/portal/telecaller/gyms/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/portal/telecaller/gyms/page.js"
-    ],
     "/portal/telecaller/calls/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/portal/telecaller/calls/page.js"
     ],
-    "/portal/telecaller/followups/page": [
+    "/portal/telecaller/tracker/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/portal/telecaller/followups/page.js"
+      "static/chunks/app/portal/telecaller/tracker/page.js"
     ]
   }
 }

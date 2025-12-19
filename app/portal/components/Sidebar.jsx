@@ -9,8 +9,8 @@ import {
   Building2,
   BarChart3,
   Phone,
-  Clock,
   X,
+  Target,
 } from 'lucide-react';
 
 export default function Sidebar({ isOpen, onClose, userRole }) {
@@ -25,9 +25,8 @@ export default function Sidebar({ isOpen, onClose, userRole }) {
 
   const telecallerMenuItems = [
     { name: 'Dashboard', href: '/portal/telecaller/dashboard', icon: Home },
-    { name: 'My Gyms', href: '/portal/telecaller/gyms', icon: Building2 },
+    { name: 'Tracker', href: '/portal/telecaller/tracker', icon: Target },
     { name: 'Call History', href: '/portal/telecaller/calls', icon: Phone },
-    { name: 'Follow-ups', href: '/portal/telecaller/followups', icon: Clock },
   ];
 
   const menuItems = userRole === 'manager' ? managerMenuItems : telecallerMenuItems;

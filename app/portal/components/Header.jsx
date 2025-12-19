@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import PropTypes from 'prop-types';
-import { LogOut, Menu, Bell, Settings } from 'lucide-react';
+import { LogOut, Menu } from 'lucide-react';
 
 export default function Header({ user, onLogout, sidebarOpen, setSidebarOpen }) {
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -47,17 +47,6 @@ export default function Header({ user, onLogout, sidebarOpen, setSidebarOpen }) 
         </div>
 
         <div className="flex items-center space-x-4">
-          {/* Notifications */}
-          <button className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-gray-700 relative">
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
-          </button>
-
-          {/* Settings */}
-          <button className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-gray-700">
-            <Settings className="w-5 h-5" />
-          </button>
-
           {/* User Menu */}
           <div className="relative">
             <button
