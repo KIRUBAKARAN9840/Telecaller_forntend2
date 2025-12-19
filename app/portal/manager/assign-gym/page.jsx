@@ -43,6 +43,8 @@ export default function AssignGymPage() {
   // Modal state
   const [showModal, setShowModal] = useState(false);
   const [selectedGym, setSelectedGym] = useState(null);
+  const [showUnassignModal, setShowUnassignModal] = useState(false);
+  const [unassignError, setUnassignError] = useState('');
 
   useEffect(() => {
     if (!telecallerId) {
@@ -186,14 +188,29 @@ export default function AssignGymPage() {
     }
   };
 
-  const handleUnassignGym = async () => {
+  const handleUnassignGym = () => {
     if (!selectedGym || !selectedGym.isAssigned) return;
 
-    if (!confirm('Are you sure you want to unassign this gym?')) return;
+    // Check if the gym can be unassigned based on its current status
+    const currentStatus = selectedGym.assignment?.current_call_status || 'pending';
+    const allowedStatuses = ['pending', 'no_response'];
+
+    if (!allowedStatuses.includes(currentStatus)) {
+      setUnassignError(`Cannot unassign gym. Current status is "${currentStatus}"`);
+      setShowUnassignModal(true);
+      return;
+    }
+
+    setShowUnassignModal(true);
+  };
+
+  const confirmUnassignGym = async () => {
+    if (!selectedGym || !selectedGym.isAssigned) return;
 
     setActionLoading(true);
     setError('');
     setSuccess('');
+    setUnassignError('');
 
     try {
       await api.post('/telecaller/manager/unassign-gym', {
@@ -207,9 +224,11 @@ export default function AssignGymPage() {
       await fetchGyms();
 
       setShowModal(false);
+      setShowUnassignModal(false);
       setSelectedGym(null);
     } catch (error) {
       setError(error.response?.data?.detail || 'Failed to unassign gym');
+      setUnassignError(error.response?.data?.detail || 'Failed to unassign gym');
     } finally {
       setActionLoading(false);
     }
@@ -423,6 +442,19 @@ export default function AssignGymPage() {
                       <Calendar className="w-4 h-4" />
                       <span>Date: {new Date(selectedGym.assignment.assigned_at).toLocaleDateString()}</span>
                     </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-400">Status:</span>
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
+                        selectedGym.assignment.current_call_status === 'pending' ? 'bg-gray-900/50 text-gray-400' :
+                        selectedGym.assignment.current_call_status === 'no_response' ? 'bg-gray-900/50 text-gray-400' :
+                        selectedGym.assignment.current_call_status === 'follow_up' ? 'bg-blue-900/50 text-blue-400' :
+                        selectedGym.assignment.current_call_status === 'converted' ? 'bg-green-900/50 text-green-400' :
+                        selectedGym.assignment.current_call_status === 'rejected' ? 'bg-red-900/50 text-red-400' :
+                        'bg-gray-700 text-gray-300'
+                      }`}>
+                        {selectedGym.assignment.current_call_status?.replace('_', ' ') || 'Pending'}
+                      </span>
+                    </div>
                   </div>
                 </div>
               )}
@@ -455,6 +487,72 @@ export default function AssignGymPage() {
               ) : (
                 <button
                   onClick={handleUnassignGym}
+                  disabled={actionLoading}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {actionLoading ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  ) : (
+                    <UserMinus className="w-4 h-4" />
+                  )}
+                  Unassign
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Unassign Confirmation Modal */}
+      {showUnassignModal && selectedGym && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="card p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold text-white">
+                {unassignError ? 'Cannot Unassign Gym' : 'Confirm Unassignment'}
+              </h3>
+              <button
+                onClick={() => {
+                  setShowUnassignModal(false);
+                  setUnassignError('');
+                }}
+                className="p-1 hover:bg-gray-700 rounded"
+              >
+                <X className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
+
+            <div className="space-y-4 mb-6">
+              {unassignError ? (
+                <div className="bg-red-900/20 border border-red-800 rounded-lg p-4">
+                  <p className="text-red-400">{unassignError}</p>
+                </div>
+              ) : (
+                <>
+                  <p className="text-gray-300">
+                    Are you sure you want to unassign <strong>{selectedGym.gym_name}</strong>?
+                  </p>
+                  <p className="text-gray-400 text-sm">
+                    This gym will become available for assignment to other telecallers.
+                  </p>
+                </>
+              )}
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowUnassignModal(false);
+                  setUnassignError('');
+                }}
+                className="flex-1 px-4 py-2 border border-gray-600 text-gray-300 rounded hover:bg-gray-700"
+              >
+                Cancel
+              </button>
+
+              {!unassignError && (
+                <button
+                  onClick={confirmUnassignGym}
                   disabled={actionLoading}
                   className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded flex items-center justify-center gap-2 disabled:opacity-50"
                 >

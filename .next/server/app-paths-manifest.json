@@ -1,5 +1,8 @@
 {
-  "/portal/telecaller/dashboard/page": "app/portal/telecaller/dashboard/page.js",
-  "/portal/telecaller/calls/page": "app/portal/telecaller/calls/page.js",
-  "/portal/telecaller/tracker/page": "app/portal/telecaller/tracker/page.js"
+  "/page": "app/page.js",
+  "/portal/manager/telecallers/page": "app/portal/manager/telecallers/page.js",
+  "/portal/manager/assign-gym/page": "app/portal/manager/assign-gym/page.js",
+  "/portal/manager/assignments/page": "app/portal/manager/assignments/page.js",
+  "/portal/manager/dashboard/page": "app/portal/manager/dashboard/page.js",
+  "/portal/telecaller/dashboard/page": "app/portal/telecaller/dashboard/page.js"
 }
