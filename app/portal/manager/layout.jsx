@@ -41,8 +41,8 @@ export default function ManagerLayout({ children }) {
   }, [router]);
 
   const handleLogout = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
+    // Cookies are HttpOnly and will be cleared by the backend
+    // Only clear user data from localStorage
     localStorage.removeItem('user');
     router.push('/');
   };

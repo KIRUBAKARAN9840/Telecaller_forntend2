@@ -9,7 +9,8 @@ import {
   Clock,
   XCircle,
   PhoneOff,
-  MapPin,
+  CalendarCheck,
+  Target,
 } from 'lucide-react';
 import api from '@/lib/axios';
 
@@ -111,9 +112,15 @@ export default function ManagerDashboard() {
           color="green"
         />
         <StatCard
-          title="Unassigned Gyms"
-          value={stats?.unassigned_gyms || 0}
-          icon={<MapPin className="w-8 h-8" />}
+          title="Today's Followups"
+          value={stats?.todays_followups || 0}
+          icon={<CalendarCheck className="w-8 h-8" />}
+          color="indigo"
+        />
+        <StatCard
+          title="Today's Call Target"
+          value={stats?.todays_call_target || 0}
+          icon={<Target className="w-8 h-8" />}
           color="orange"
         />
         <StatCard
@@ -123,7 +130,7 @@ export default function ManagerDashboard() {
           color="purple"
         />
         <StatCard
-          title="Follow-ups Pending"
+          title="Total Follow-ups Pending"
           value={stats?.followups_pending || 0}
           icon={<Clock className="w-8 h-8" />}
           color="yellow"

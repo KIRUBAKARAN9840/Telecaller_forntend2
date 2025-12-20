@@ -1,9 +1,9 @@
 {
   "pages": {
-    "/portal/manager/telecallers/page": [
+    "/portal/manager/dashboard/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/portal/manager/telecallers/page.js"
+      "static/chunks/app/portal/manager/dashboard/page.js"
     ],
     "/portal/manager/layout": [
       "static/chunks/webpack.js",
@@ -16,25 +16,25 @@
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
     ],
-    "/portal/manager/assign-gym/page": [
+    "/portal/manager/performance/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/portal/manager/assign-gym/page.js"
+      "static/chunks/app/portal/manager/performance/page.js"
     ],
-    "/page": [
+    "/portal/manager/telecallers/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/page.js"
-    ],
-    "/portal/manager/dashboard/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/portal/manager/dashboard/page.js"
+      "static/chunks/app/portal/manager/telecallers/page.js"
     ],
     "/portal/manager/tracker/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/portal/manager/tracker/page.js"
+    ],
+    "/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/page.js"
     ]
   }
 }
