@@ -66,15 +66,99 @@ export default function Tracker() {
   });
   const [followUpDate, setFollowUpDate] = useState('');
 
+  // Filter states for pending tab
+  const [targetDateFilter, setTargetDateFilter] = useState('');
+  const [targetStartDate, setTargetStartDate] = useState('');
+  const [targetEndDate, setTargetEndDate] = useState('');
+
+  // Filter states for follow-up tab
+  const [followUpFilter, setFollowUpFilter] = useState('');
+  const [followUpStartDate, setFollowUpStartDate] = useState('');
+  const [followUpEndDate, setFollowUpEndDate] = useState('');
+
+  // Filter states for converted tab
+  const [convertedFilter, setConvertedFilter] = useState('');
+  const [convertedStartDate, setConvertedStartDate] = useState('');
+  const [convertedEndDate, setConvertedEndDate] = useState('');
+  const [verificationComplete, setVerificationComplete] = useState(false);
+  const [verificationNotComplete, setVerificationNotComplete] = useState(false);
+
+  // Filter states for rejected tab
+  const [rejectedFilter, setRejectedFilter] = useState('');
+  const [rejectedStartDate, setRejectedStartDate] = useState('');
+  const [rejectedEndDate, setRejectedEndDate] = useState('');
+
+  // Filter states for no response tab
+  const [noResponseFilter, setNoResponseFilter] = useState('');
+  const [noResponseStartDate, setNoResponseStartDate] = useState('');
+  const [noResponseEndDate, setNoResponseEndDate] = useState('');
+
   useEffect(() => {
     fetchGyms();
-  }, [activeTab]);
+  }, [activeTab, targetDateFilter, targetStartDate, targetEndDate, followUpFilter, followUpStartDate, followUpEndDate, convertedFilter, convertedStartDate, convertedEndDate, verificationComplete, verificationNotComplete, rejectedFilter, rejectedStartDate, rejectedEndDate, noResponseFilter, noResponseStartDate, noResponseEndDate]);
 
   const fetchGyms = async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await api.get(`/telecaller/telecaller/gyms?status=${activeTab}`);
+      // Build query parameters
+      const params = new URLSearchParams({ status: activeTab });
+
+      // Add target date filter for pending tab
+      if (activeTab === 'pending' && targetDateFilter) {
+        params.append('target_date_filter', targetDateFilter);
+        if (targetDateFilter === 'custom' && targetStartDate && targetEndDate) {
+          params.append('target_start_date', targetStartDate);
+          params.append('target_end_date', targetEndDate);
+        }
+      }
+
+      // Add follow-up date filter for follow-up tab
+      if (activeTab === 'follow_up' && followUpFilter) {
+        params.append('follow_up_filter', followUpFilter);
+        if (followUpFilter === 'custom' && followUpStartDate && followUpEndDate) {
+          params.append('follow_up_start_date', followUpStartDate);
+          params.append('follow_up_end_date', followUpEndDate);
+        }
+      }
+
+      // Add converted date filter for converted tab
+      if (activeTab === 'converted' && convertedFilter) {
+        params.append('converted_filter', convertedFilter);
+        if (convertedFilter === 'custom' && convertedStartDate && convertedEndDate) {
+          params.append('converted_start_date', convertedStartDate);
+          params.append('converted_end_date', convertedEndDate);
+        }
+      }
+
+      // Add verification filters for converted tab
+      if (activeTab === 'converted') {
+        if (verificationComplete) {
+          params.append('verification_complete', 'true');
+        } else if (verificationNotComplete) {
+          params.append('verification_complete', 'false');
+        }
+      }
+
+      // Add rejected date filter for rejected tab
+      if (activeTab === 'rejected' && rejectedFilter) {
+        params.append('rejected_filter', rejectedFilter);
+        if (rejectedFilter === 'custom' && rejectedStartDate && rejectedEndDate) {
+          params.append('rejected_start_date', rejectedStartDate);
+          params.append('rejected_end_date', rejectedEndDate);
+        }
+      }
+
+      // Add no response date filter for no response tab
+      if (activeTab === 'no_response' && noResponseFilter) {
+        params.append('no_response_filter', noResponseFilter);
+        if (noResponseFilter === 'custom' && noResponseStartDate && noResponseEndDate) {
+          params.append('no_response_start_date', noResponseStartDate);
+          params.append('no_response_end_date', noResponseEndDate);
+        }
+      }
+
+      const response = await api.get(`/telecaller/telecaller/gyms?${params.toString()}`);
       setGyms(response.data.gyms || []);
     } catch (error) {
       console.error('Failed to fetch gyms:', error);
@@ -245,7 +329,46 @@ export default function Tracker() {
     }
   };
 
-  
+  const handleVerificationToggle = (type) => {
+    if (type === 'complete') {
+      setVerificationComplete(!verificationComplete);
+      setVerificationNotComplete(false);
+    } else {
+      setVerificationNotComplete(!verificationNotComplete);
+      setVerificationComplete(false);
+    }
+  };
+
+  const handleSaveConverted = async () => {
+    try {
+      const payload = {
+        gym_id: selectedGym.gym_id,
+        status: 'converted',
+        call_form: {
+          interest_level: formData.interest_level || null,
+          total_members: formData.total_members ? parseInt(formData.total_members) : null,
+          new_contact_number: formData.new_contact_number || null,
+          feature_explained: formData.feature_explained,
+          remarks: formData.remarks,
+        },
+        follow_up_date: null,
+        converted_status: convertedStatusData,
+      };
+
+      await api.post('/telecaller/telecaller/update-gym-status', payload);
+
+      setShowCallModal(false);
+      setShowConvertedModal(false);
+      setSelectedGym(null);
+
+      // Refresh gyms to update status
+      await fetchGyms();
+    } catch (error) {
+      setError(error.response?.data?.detail || 'Failed to update status');
+    }
+  };
+
+
   const handleViewHistory = async (gym) => {
     setSelectedGym(gym);
     setLoadingHistory(true);
@@ -274,6 +397,16 @@ export default function Tracker() {
       minute: '2-digit',
       hour12: true,
       timeZone: 'Asia/Kolkata'
+    });
+  };
+
+  const formatDateOnly = (dateString) => {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-IN', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
     });
   };
 
@@ -310,6 +443,324 @@ export default function Tracker() {
           ))}
         </div>
       </div>
+
+      {/* Filters for Pending Tab */}
+      {activeTab === 'pending' && (
+        <div className="mb-6 p-4 bg-gray-800 rounded-lg">
+          <div className="flex flex-wrap items-end gap-3">
+            {/* Target Date Filter */}
+            <div className="min-w-[160px]">
+              <label className="block text-xs font-medium text-gray-300 mb-1">
+                Target Date Filter
+              </label>
+              <select
+                value={targetDateFilter}
+                onChange={(e) => {
+                  setTargetDateFilter(e.target.value);
+                  setTargetStartDate('');
+                  setTargetEndDate('');
+                }}
+                className="w-full px-2 py-1.5 text-sm bg-gray-700 border border-gray-600 rounded text-white"
+              >
+                <option value="">All</option>
+                <option value="today">Today</option>
+                <option value="this_week">This Week</option>
+                <option value="this_month">This Month</option>
+                <option value="custom">Custom Range</option>
+              </select>
+            </div>
+
+            {/* Custom Target Date Range */}
+            {targetDateFilter === 'custom' && (
+              <>
+                <div className="min-w-[130px]">
+                  <label className="block text-xs font-medium text-gray-300 mb-1">
+                    Target Start
+                  </label>
+                  <input
+                    type="date"
+                    value={targetStartDate}
+                    onChange={(e) => setTargetStartDate(e.target.value)}
+                    className="w-full px-2 py-1.5 text-sm bg-gray-700 border border-gray-600 rounded text-white"
+                  />
+                </div>
+                <div className="min-w-[130px]">
+                  <label className="block text-xs font-medium text-gray-300 mb-1">
+                    Target End
+                  </label>
+                  <input
+                    type="date"
+                    value={targetEndDate}
+                    onChange={(e) => setTargetEndDate(e.target.value)}
+                    className="w-full px-2 py-1.5 text-sm bg-gray-700 border border-gray-600 rounded text-white"
+                  />
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Filters for Follow-up Tab */}
+      {activeTab === 'follow_up' && (
+        <div className="mb-6 p-4 bg-gray-800 rounded-lg">
+          <div className="flex flex-wrap items-end gap-3">
+            {/* Follow-up Date Filter */}
+            <div className="min-w-[160px]">
+              <label className="block text-xs font-medium text-gray-300 mb-1">
+                Follow-up Date Filter
+              </label>
+              <select
+                value={followUpFilter}
+                onChange={(e) => {
+                  setFollowUpFilter(e.target.value);
+                  setFollowUpStartDate('');
+                  setFollowUpEndDate('');
+                }}
+                className="w-full px-2 py-1.5 text-sm bg-gray-700 border border-gray-600 rounded text-white"
+              >
+                <option value="">All</option>
+                <option value="today">Today</option>
+                <option value="this_week">This Week</option>
+                <option value="overdue">Overdue</option>
+                <option value="custom">Custom Range</option>
+              </select>
+            </div>
+
+            {/* Custom Follow-up Date Range */}
+            {followUpFilter === 'custom' && (
+              <>
+                <div className="min-w-[130px]">
+                  <label className="block text-xs font-medium text-gray-300 mb-1">
+                    Follow-up Start
+                  </label>
+                  <input
+                    type="date"
+                    value={followUpStartDate}
+                    onChange={(e) => setFollowUpStartDate(e.target.value)}
+                    className="w-full px-2 py-1.5 text-sm bg-gray-700 border border-gray-600 rounded text-white"
+                  />
+                </div>
+                <div className="min-w-[130px]">
+                  <label className="block text-xs font-medium text-gray-300 mb-1">
+                    Follow-up End
+                  </label>
+                  <input
+                    type="date"
+                    value={followUpEndDate}
+                    onChange={(e) => setFollowUpEndDate(e.target.value)}
+                    className="w-full px-2 py-1.5 text-sm bg-gray-700 border border-gray-600 rounded text-white"
+                  />
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Filters for Converted Tab */}
+      {activeTab === 'converted' && (
+        <div className="mb-6 p-4 bg-gray-800 rounded-lg">
+          <div className="flex flex-wrap items-end gap-3">
+            {/* Converted Date Filter */}
+            <div className="min-w-[160px]">
+              <label className="block text-xs font-medium text-gray-300 mb-1">
+                Converted Date Filter
+              </label>
+              <select
+                value={convertedFilter}
+                onChange={(e) => {
+                  setConvertedFilter(e.target.value);
+                  setConvertedStartDate('');
+                  setConvertedEndDate('');
+                }}
+                className="w-full px-2 py-1.5 text-sm bg-gray-700 border border-gray-600 rounded text-white"
+              >
+                <option value="">All</option>
+                <option value="today">Today</option>
+                <option value="this_week">This Week</option>
+                <option value="this_month">This Month</option>
+                <option value="custom">Custom Range</option>
+              </select>
+            </div>
+
+            {/* Custom Converted Date Range */}
+            {convertedFilter === 'custom' && (
+              <>
+                <div className="min-w-[130px]">
+                  <label className="block text-xs font-medium text-gray-300 mb-1">
+                    Converted Start
+                  </label>
+                  <input
+                    type="date"
+                    value={convertedStartDate}
+                    onChange={(e) => setConvertedStartDate(e.target.value)}
+                    className="w-full px-2 py-1.5 text-sm bg-gray-700 border border-gray-600 rounded text-white"
+                  />
+                </div>
+                <div className="min-w-[130px]">
+                  <label className="block text-xs font-medium text-gray-300 mb-1">
+                    Converted End
+                  </label>
+                  <input
+                    type="date"
+                    value={convertedEndDate}
+                    onChange={(e) => setConvertedEndDate(e.target.value)}
+                    className="w-full px-2 py-1.5 text-sm bg-gray-700 border border-gray-600 rounded text-white"
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Verification Filters */}
+            <div className="min-w-[320px]">
+              {/* <label className="block text-xs font-medium text-gray-300 mb-1">Verification Filter</label> */}
+              <div className="flex gap-4">
+                {/* Verification Completed Toggle */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-300">Verification Completed</span>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={verificationComplete}
+                      onChange={() => handleVerificationToggle('complete')}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                  </label>
+                </div>
+                {/* Not Verified Toggle */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-300">Not Verified</span>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={verificationNotComplete}
+                      onChange={() => handleVerificationToggle('not_complete')}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Filters for Rejected Tab */}
+      {activeTab === 'rejected' && (
+        <div className="mb-6 p-4 bg-gray-800 rounded-lg">
+          <div className="flex flex-wrap items-end gap-3">
+            {/* Rejected Date Filter */}
+            <div className="min-w-[160px]">
+              <label className="block text-xs font-medium text-gray-300 mb-1">
+                Rejected Date Filter
+              </label>
+              <select
+                value={rejectedFilter}
+                onChange={(e) => {
+                  setRejectedFilter(e.target.value);
+                  setRejectedStartDate('');
+                  setRejectedEndDate('');
+                }}
+                className="w-full px-2 py-1.5 text-sm bg-gray-700 border border-gray-600 rounded text-white"
+              >
+                <option value="">All</option>
+                <option value="today">Today</option>
+                <option value="this_week">This Week</option>
+                <option value="this_month">This Month</option>
+                <option value="custom">Custom Range</option>
+              </select>
+            </div>
+
+            {/* Custom Rejected Date Range */}
+            {rejectedFilter === 'custom' && (
+              <>
+                <div className="min-w-[130px]">
+                  <label className="block text-xs font-medium text-gray-300 mb-1">
+                    Rejected Start
+                  </label>
+                  <input
+                    type="date"
+                    value={rejectedStartDate}
+                    onChange={(e) => setRejectedStartDate(e.target.value)}
+                    className="w-full px-2 py-1.5 text-sm bg-gray-700 border border-gray-600 rounded text-white"
+                  />
+                </div>
+                <div className="min-w-[130px]">
+                  <label className="block text-xs font-medium text-gray-300 mb-1">
+                    Rejected End
+                  </label>
+                  <input
+                    type="date"
+                    value={rejectedEndDate}
+                    onChange={(e) => setRejectedEndDate(e.target.value)}
+                    className="w-full px-2 py-1.5 text-sm bg-gray-700 border border-gray-600 rounded text-white"
+                  />
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Filters for No Response Tab */}
+      {activeTab === 'no_response' && (
+        <div className="mb-6 p-4 bg-gray-800 rounded-lg">
+          <div className="flex flex-wrap items-end gap-3">
+            {/* No Response Date Filter */}
+            <div className="min-w-[160px]">
+              <label className="block text-xs font-medium text-gray-300 mb-1">
+                No Response Date Filter
+              </label>
+              <select
+                value={noResponseFilter}
+                onChange={(e) => {
+                  setNoResponseFilter(e.target.value);
+                  setNoResponseStartDate('');
+                  setNoResponseEndDate('');
+                }}
+                className="w-full px-2 py-1.5 text-sm bg-gray-700 border border-gray-600 rounded text-white"
+              >
+                <option value="">All</option>
+                <option value="today">Today</option>
+                <option value="this_week">This Week</option>
+                <option value="this_month">This Month</option>
+                <option value="custom">Custom Range</option>
+              </select>
+            </div>
+
+            {/* Custom No Response Date Range */}
+            {noResponseFilter === 'custom' && (
+              <>
+                <div className="min-w-[130px]">
+                  <label className="block text-xs font-medium text-gray-300 mb-1">
+                    No Response Start
+                  </label>
+                  <input
+                    type="date"
+                    value={noResponseStartDate}
+                    onChange={(e) => setNoResponseStartDate(e.target.value)}
+                    className="w-full px-2 py-1.5 text-sm bg-gray-700 border border-gray-600 rounded text-white"
+                  />
+                </div>
+                <div className="min-w-[130px]">
+                  <label className="block text-xs font-medium text-gray-300 mb-1">
+                    No Response End
+                  </label>
+                  <input
+                    type="date"
+                    value={noResponseEndDate}
+                    onChange={(e) => setNoResponseEndDate(e.target.value)}
+                    className="w-full px-2 py-1.5 text-sm bg-gray-700 border border-gray-600 rounded text-white"
+                  />
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Error Message */}
       {error && (
@@ -352,6 +803,11 @@ export default function Tracker() {
                   <p className="text-gray-300">
                     <span className="text-gray-400">City:</span> {gym.city}
                   </p>
+                  {gym.target_date && gym.call_status === 'pending' && (
+                    <p className="text-orange-400">
+                      <span className="text-gray-400">Target:</span> {formatDateOnly(gym.target_date)}
+                    </p>
+                  )}
                   {gym.last_call_date && (
                     <p className="text-gray-300">
                       <span className="text-gray-400">Last Call:</span> {formatDate(gym.last_call_date)}
@@ -361,6 +817,27 @@ export default function Tracker() {
                     <p className="text-blue-400">
                       <span className="text-gray-400">Follow-up:</span> {formatDate(gym.follow_up_date)}
                     </p>
+                  )}
+                  {/* Show verification status for converted gyms */}
+                  {gym.call_status === 'converted' && gym.last_call_details?.converted_status && (
+                    <div className="mt-2 pt-2 border-t border-gray-700 flex items-center justify-between">
+                      <span className="text-xs text-gray-400">Verification Status:</span>
+                      {(() => {
+                        const { converted_status } = gym.last_call_details;
+                        const allComplete = (
+                          converted_status.document_uploaded &&
+                          converted_status.membership_plan_created &&
+                          converted_status.session_created &&
+                          converted_status.daily_pass_created &&
+                          converted_status.gym_studio_images_uploaded
+                        );
+                        return allComplete ? (
+                          <span className="text-green-400 text-lg">✔</span>
+                        ) : (
+                          <span className="text-red-400 text-lg">✖</span>
+                        );
+                      })()}
+                    </div>
                   )}
                 </div>
               </div>
@@ -670,7 +1147,7 @@ export default function Tracker() {
                 Back
               </button>
               <button
-                onClick={() => handleStatusSubmit('converted')}
+                onClick={handleSaveConverted}
                 className="flex-1 p-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
               >
                 Save Converted
@@ -701,7 +1178,7 @@ export default function Tracker() {
               <div className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
                 <label className="flex items-center text-sm font-medium text-gray-300">
                   <FileText className="w-4 h-4 mr-2" />
-                  Document Uploaded
+                  Document Verified
                 </label>
                 <input
                   type="checkbox"

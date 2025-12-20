@@ -479,7 +479,7 @@ export default function TelecallerGymsPage() {
                 />
                 <label htmlFor="document_uploaded" className="text-sm font-medium text-gray-300 flex items-center">
                   <FileText className="w-4 h-4 mr-2" />
-                  Document Uploaded
+                  Document Verified
                 </label>
               </div>
 
