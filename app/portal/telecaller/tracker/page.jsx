@@ -92,21 +92,53 @@ export default function Tracker() {
   const handleCallClick = (gym) => {
     setSelectedGym(gym);
     setShowCallModal(true);
-    // Reset form data
-    setFormData({
-      interest_level: '',
-      total_members: '',
-      new_contact_number: '',
-      feature_explained: false,
-      remarks: '',
-    });
-    setConvertedStatusData({
-      document_uploaded: false,
-      membership_plan_created: false,
-      session_created: false,
-      daily_pass_created: false,
-      gym_studio_images_uploaded: false,
-    });
+
+    // Pre-fill form with last call data if available
+    if (gym.last_call_details) {
+      setFormData({
+        interest_level: gym.last_call_details.interest_level || '',
+        total_members: gym.last_call_details.total_members || '',
+        new_contact_number: gym.last_call_details.new_contact_number || '',
+        feature_explained: gym.last_call_details.feature_explained || false,
+        remarks: '', // Always start with empty remarks for new entry
+      });
+
+      // Pre-fill converted status if available
+      if (gym.last_call_details.converted_status) {
+        setConvertedStatusData({
+          document_uploaded: gym.last_call_details.converted_status.document_uploaded || false,
+          membership_plan_created: gym.last_call_details.converted_status.membership_plan_created || false,
+          session_created: gym.last_call_details.converted_status.session_created || false,
+          daily_pass_created: gym.last_call_details.converted_status.daily_pass_created || false,
+          gym_studio_images_uploaded: gym.last_call_details.converted_status.gym_studio_images_uploaded || false,
+        });
+      } else {
+        setConvertedStatusData({
+          document_uploaded: false,
+          membership_plan_created: false,
+          session_created: false,
+          daily_pass_created: false,
+          gym_studio_images_uploaded: false,
+        });
+      }
+    } else {
+      // Reset form data if no previous call data
+      setFormData({
+        interest_level: '',
+        total_members: '',
+        new_contact_number: '',
+        feature_explained: false,
+        remarks: '',
+      });
+      setConvertedStatusData({
+        document_uploaded: false,
+        membership_plan_created: false,
+        session_created: false,
+        daily_pass_created: false,
+        gym_studio_images_uploaded: false,
+      });
+    }
+
     setFollowUpDate('');
     setError(null);
   };
@@ -300,60 +332,69 @@ export default function Tracker() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {gyms.map((gym) => (
-            <div key={gym.gym_id} className="bg-gray-800 rounded-lg p-4 hover:bg-gray-700 transition-colors border border-gray-700">
-              <div className="flex justify-between items-start mb-3">
-                <h3 className="text-white font-semibold text-lg">{gym.gym_name}</h3>
-                <span className={`px-2 py-1 rounded text-xs font-medium bg-gray-700 text-gray-300`}>
-                  {TABS.find(t => t.id === gym.call_status)?.name || gym.call_status}
-                </span>
+            <div key={gym.gym_id} className="bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors border border-gray-700 flex flex-col h-full">
+              {/* Header Section */}
+              <div className="p-4 pb-2">
+                <div className="flex justify-between items-start mb-3">
+                  <h3 className="text-white font-semibold text-lg flex-1 pr-2">{gym.gym_name}</h3>
+                  <span className={`px-2 py-1 rounded text-xs font-medium bg-gray-700 text-gray-300 whitespace-nowrap`}>
+                    {TABS.find(t => t.id === gym.call_status)?.name || gym.call_status}
+                  </span>
+                </div>
               </div>
 
-              <div className="space-y-2 text-sm">
-                <p className="text-gray-300">
-                  <span className="text-gray-400">Phone:</span> {gym.contact_number}
-                </p>
-                <p className="text-gray-300">
-                  <span className="text-gray-400">City:</span> {gym.city}
-                </p>
-                {gym.last_call_date && (
+              {/* Content Section - Can grow */}
+              <div className="px-4 pb-2 flex-grow">
+                <div className="space-y-2 text-sm">
                   <p className="text-gray-300">
-                    <span className="text-gray-400">Last Call:</span> {formatDate(gym.last_call_date)}
+                    <span className="text-gray-400">Phone:</span> {gym.contact_number}
                   </p>
-                )}
-                {gym.follow_up_date && gym.call_status === 'follow_up' && (
-                  <p className="text-blue-400">
-                    <span className="text-gray-400">Follow-up:</span> {formatDate(gym.follow_up_date)}
+                  <p className="text-gray-300">
+                    <span className="text-gray-400">City:</span> {gym.city}
                   </p>
-                )}
+                  {gym.last_call_date && (
+                    <p className="text-gray-300">
+                      <span className="text-gray-400">Last Call:</span> {formatDate(gym.last_call_date)}
+                    </p>
+                  )}
+                  {gym.follow_up_date && gym.call_status === 'follow_up' && (
+                    <p className="text-blue-400">
+                      <span className="text-gray-400">Follow-up:</span> {formatDate(gym.follow_up_date)}
+                    </p>
+                  )}
+                </div>
               </div>
 
-              <div className="flex gap-2 mt-4">
-                <button
-                  onClick={() => handleCallClick(gym)}
-                  className="flex-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors py-2 px-4 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={gym.call_status === 'rejected'}
-                >
-                  {gym.call_status === 'rejected'
-                    ? 'Status Closed'
-                    : <><Phone className="inline w-4 h-4 mr-2" /> Log Call</>
-                  }
-                </button>
-                {gym.call_status === 'converted' && (
+              {/* Fixed Button Section - Always at bottom */}
+              <div className="p-4 pt-2 mt-auto">
+                <div className="flex gap-2">
                   <button
-                    onClick={() => handleEditConvertedStatus(gym)}
-                    className="px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors text-sm font-medium"
-                    title="Edit Converted Status"
+                    onClick={() => handleCallClick(gym)}
+                    className="flex-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors py-2 px-4 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={gym.call_status === 'rejected'}
                   >
-                    <Edit className="w-4 h-4" />
+                    {gym.call_status === 'rejected'
+                      ? 'Status Closed'
+                      : <><Phone className="inline w-4 h-4 mr-2" /> Log Call</>
+                    }
                   </button>
-                )}
-                <button
-                  onClick={() => handleViewHistory(gym)}
-                  className="px-3 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors text-sm font-medium"
-                  title="View Follow-up History"
-                >
-                  <Clock className="w-4 h-4" />
-                </button>
+                  {gym.call_status === 'converted' && (
+                    <button
+                      onClick={() => handleEditConvertedStatus(gym)}
+                      className="px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors text-sm font-medium"
+                      title="Edit Converted Status"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleViewHistory(gym)}
+                    className="px-3 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors text-sm font-medium"
+                    title="View Follow-up History"
+                  >
+                    <Clock className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -430,6 +471,13 @@ export default function Tracker() {
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   Remarks <span className="text-red-500">*</span>
                 </label>
+                {/* Show previous remark if available */}
+                {selectedGym?.last_call_details?.remarks && (
+                  <div className="mb-2 p-2 bg-gray-700 rounded text-sm text-gray-400">
+                    <span className="text-xs text-gray-500">Previous remark:</span>
+                    <p>{selectedGym.last_call_details.remarks}</p>
+                  </div>
+                )}
                 <textarea
                   value={formData.remarks}
                   onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}

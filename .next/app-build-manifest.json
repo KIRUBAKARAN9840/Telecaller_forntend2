@@ -40,6 +40,11 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/portal/manager/telecallers/page.js"
+    ],
+    "/portal/telecaller/calls/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/portal/telecaller/calls/page.js"
     ]
   }
 }
