@@ -30,6 +30,31 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/portal/telecaller/calls/page.js"
+    ],
+    "/portal/manager/dashboard/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/portal/manager/dashboard/page.js"
+    ],
+    "/portal/manager/layout": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/portal/manager/layout.js"
+    ],
+    "/portal/manager/telecallers/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/portal/manager/telecallers/page.js"
+    ],
+    "/portal/manager/tracker/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/portal/manager/tracker/page.js"
+    ],
+    "/portal/manager/performance/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/portal/manager/performance/page.js"
     ]
   }
 }
