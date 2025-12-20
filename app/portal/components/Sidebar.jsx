@@ -6,7 +6,6 @@ import PropTypes from 'prop-types';
 import {
   Home,
   Users,
-  Building2,
   BarChart3,
   Phone,
   X,
