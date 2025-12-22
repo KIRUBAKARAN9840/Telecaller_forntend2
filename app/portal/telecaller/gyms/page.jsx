@@ -18,6 +18,7 @@ import {
   CreditCard,
   CalendarDays,
   Camera,
+  Signature,
 } from 'lucide-react';
 import api from '@/lib/axios';
 
@@ -46,6 +47,7 @@ export default function TelecallerGymsPage() {
     session_created: false,
     daily_pass_created: false,
     gym_studio_images_uploaded: false,
+    agreement_signed: false,
   });
 
   const [followUpDate, setFollowUpDate] = useState('');
@@ -89,6 +91,7 @@ export default function TelecallerGymsPage() {
       session_created: false,
       daily_pass_created: false,
       gym_studio_images_uploaded: false,
+      agreement_signed: false,
     });
     setFollowUpDate('');
   };
@@ -469,6 +472,20 @@ export default function TelecallerGymsPage() {
             </h3>
 
             <div className="space-y-4 mb-6">
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="agreement_signed"
+                  checked={convertedStatusData.agreement_signed}
+                  onChange={(e) => setConvertedStatusData({ ...convertedStatusData, agreement_signed: e.target.checked })}
+                  className="mr-3 w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
+                />
+                <label htmlFor="agreement_signed" className="text-sm font-medium text-gray-300 flex items-center">
+                  <Signature className="w-4 h-4 mr-2" />
+                  Agreement Signed
+                </label>
+              </div>
+
               <div className="flex items-center">
                 <input
                   type="checkbox"

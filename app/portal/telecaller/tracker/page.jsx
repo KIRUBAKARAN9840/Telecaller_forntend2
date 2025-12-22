@@ -16,6 +16,7 @@ import {
   Edit,
   Save,
   X,
+  Signature,
 } from 'lucide-react';
 import api from '@/lib/axios';
 
@@ -46,6 +47,7 @@ export default function Tracker() {
     session_created: false,
     daily_pass_created: false,
     gym_studio_images_uploaded: false,
+    agreement_signed: false,
   });
   const [editingConvertedGym, setEditingConvertedGym] = useState(null);
 
@@ -63,6 +65,7 @@ export default function Tracker() {
     session_created: false,
     daily_pass_created: false,
     gym_studio_images_uploaded: false,
+    agreement_signed: false,
   });
   const [followUpDate, setFollowUpDate] = useState('');
 
@@ -195,6 +198,7 @@ export default function Tracker() {
           session_created: gym.last_call_details.converted_status.session_created || false,
           daily_pass_created: gym.last_call_details.converted_status.daily_pass_created || false,
           gym_studio_images_uploaded: gym.last_call_details.converted_status.gym_studio_images_uploaded || false,
+          agreement_signed: gym.last_call_details.converted_status.agreement_signed || false,
         });
       } else {
         setConvertedStatusData({
@@ -203,6 +207,7 @@ export default function Tracker() {
           session_created: false,
           daily_pass_created: false,
           gym_studio_images_uploaded: false,
+          agreement_signed: false,
         });
       }
     } else {
@@ -220,6 +225,7 @@ export default function Tracker() {
         session_created: false,
         daily_pass_created: false,
         gym_studio_images_uploaded: false,
+        agreement_signed: false,
       });
     }
 
@@ -238,6 +244,7 @@ export default function Tracker() {
         session_created: response.data.session_created,
         daily_pass_created: response.data.daily_pass_created,
         gym_studio_images_uploaded: response.data.gym_studio_images_uploaded,
+        agreement_signed: response.data.agreement_signed,
       });
       setShowConvertedEditModal(true);
     } catch (error) {
@@ -1074,6 +1081,19 @@ export default function Tracker() {
             <div className="space-y-3 mb-6">
               <div className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
                 <label className="flex items-center text-sm font-medium text-gray-300">
+                  <Signature className="w-4 h-4 mr-2" />
+                  Agreement Signed
+                </label>
+                <input
+                  type="checkbox"
+                  checked={convertedStatusData.agreement_signed}
+                  onChange={(e) => setConvertedStatusData({ ...convertedStatusData, agreement_signed: e.target.checked })}
+                  className="w-4 h-4"
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
+                <label className="flex items-center text-sm font-medium text-gray-300">
                   <FileText className="w-4 h-4 mr-2" />
                   Document
                 </label>
@@ -1177,6 +1197,19 @@ export default function Tracker() {
             </div>
 
             <div className="space-y-3 mb-6">
+              <div className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
+                <label className="flex items-center text-sm font-medium text-gray-300">
+                  <Signature className="w-4 h-4 mr-2" />
+                  Agreement Signed
+                </label>
+                <input
+                  type="checkbox"
+                  checked={editFormData.agreement_signed}
+                  onChange={(e) => setEditFormData({ ...editFormData, agreement_signed: e.target.checked })}
+                  className="w-4 h-4"
+                />
+              </div>
+
               <div className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
                 <label className="flex items-center text-sm font-medium text-gray-300">
                   <FileText className="w-4 h-4 mr-2" />
