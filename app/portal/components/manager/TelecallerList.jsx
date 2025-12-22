@@ -136,7 +136,10 @@ export default function TelecallerList() {
             {telecallers.map((telecaller) => (
               <tr
                 key={telecaller.id}
-                className="border-b border-gray-800 hover:bg-gray-700/50 transition-colors"
+                className="border-b border-gray-800 hover:bg-gray-700/50 transition-colors cursor-pointer"
+                onClick={() => {
+                  window.location.href = `/portal/manager/telecaller-performance?telecallerId=${telecaller.id}&telecallerName=${encodeURIComponent(telecaller.name)}`;
+                }}
               >
                 <td className="p-4">
                   <div className="flex items-center">
@@ -147,6 +150,7 @@ export default function TelecallerList() {
                     </div>
                     <div>
                       <p className="text-white font-medium">{telecaller.name}</p>
+                      <p className="text-xs text-gray-400">Click to view performance</p>
                     </div>
                   </div>
                 </td>
@@ -187,7 +191,10 @@ export default function TelecallerList() {
                 </td>
                 <td className="p-4">
                   <button
-                    onClick={() => handleAssignGym(telecaller)}
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent row click event
+                      handleAssignGym(telecaller);
+                    }}
                     className="btn-primary flex items-center gap-2 text-sm"
                   >
                     <Plus className="w-4 h-4" />

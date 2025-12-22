@@ -6,7 +6,6 @@ import PropTypes from 'prop-types';
 import {
   Home,
   Users,
-  BarChart3,
   Phone,
   X,
   Target,
@@ -19,7 +18,6 @@ export default function Sidebar({ isOpen, onClose, userRole }) {
     { name: 'Dashboard', href: '/portal/manager/dashboard', icon: Home },
     { name: 'Telecallers', href: '/portal/manager/telecallers', icon: Users },
     { name: 'Tracker', href: '/portal/manager/tracker', icon: Target },
-    { name: 'Performance', href: '/portal/manager/performance', icon: BarChart3 },
   ];
 
   const telecallerMenuItems = [
