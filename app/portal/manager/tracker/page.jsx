@@ -727,15 +727,17 @@ export default function ManagerTracker() {
                     <div className="text-xs text-gray-400">
                       Assigned: {gym.assigned_at ? formatDate(gym.assigned_at) : 'Not assigned'}
                     </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleViewHistory(gym)}
-                        className="px-3 py-1.5 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors text-xs"
-                        title="View Call History"
-                      >
-                        <Clock className="w-4 h-4" />
-                      </button>
-                    </div>
+                    {activeTab !== 'pending' && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleViewHistory(gym)}
+                          className="px-3 py-1.5 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors text-xs"
+                          title="View Call History"
+                        >
+                          <Clock className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

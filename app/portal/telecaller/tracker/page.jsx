@@ -864,13 +864,15 @@ export default function Tracker() {
                       <Edit className="w-4 h-4" />
                     </button>
                   )}
-                  <button
-                    onClick={() => handleViewHistory(gym)}
-                    className="px-3 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors text-sm font-medium"
-                    title="View Follow-up History"
-                  >
-                    <Clock className="w-4 h-4" />
-                  </button>
+                  {activeTab !== 'pending' && (
+                    <button
+                      onClick={() => handleViewHistory(gym)}
+                      className="px-3 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors text-sm font-medium"
+                      title="View Follow-up History"
+                    >
+                      <Clock className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
