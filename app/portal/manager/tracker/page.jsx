@@ -10,6 +10,7 @@ import {
   AlertCircle,
   MapPin,
   X,
+  Info,
 } from 'lucide-react';
 import api from '@/lib/axios';
 
@@ -36,6 +37,8 @@ export default function ManagerTracker() {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [followUpHistory, setFollowUpHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [selectedGymAddress, setSelectedGymAddress] = useState(null);
 
   // Filter states for pending tab
   const [targetDateFilter, setTargetDateFilter] = useState('');
@@ -261,6 +264,11 @@ export default function ManagerTracker() {
     } finally {
       setLoadingHistory(false);
     }
+  };
+
+  const handleViewAddress = (gym) => {
+    setSelectedGymAddress(gym);
+    setShowAddressModal(true);
   };
 
   if (loading) {
@@ -639,143 +647,162 @@ export default function ManagerTracker() {
         </div>
       )}
 
-      {/* Gym Cards */}
-      <div className="card p-6">
+      {/* Gym Table */}
+      <div className="card">
         {loading ? (
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500"></div>
           </div>
         ) : gyms.length === 0 ? (
-          <div className="text-center py-8">
-            <Building2 className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-            <p className="text-gray-400 text-lg">No gyms found in {activeTab}</p>
+          <div className="text-center py-12">
+            <Building2 className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+            <p className="text-gray-400">No gyms found for this filter</p>
           </div>
         ) : (
-          <>
-            {/* Gym Count */}
-            <div className="mb-6">
-              <p className="text-gray-400">
-                Showing {gyms.length} gym{gyms.length !== 1 ? 's' : ''} in {activeTab}
-              </p>
-            </div>
-
-            {/* Gym Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {gyms.map((gym) => (
-                <div
-                  key={gym.gym_id}
-                  className="bg-gray-700 rounded-lg p-4 hover:bg-gray-600 transition-colors"
-                >
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex-1">
-                      <h3 className="text-white font-semibold text-lg">{gym.gym_name}</h3>
-                      <p className="text-gray-300 text-sm mt-1">
-                        <span className="text-gray-400">City:</span> {gym.city || 'Unknown'}
-                      </p>
-                      {gym.area && (
-                        <p className="text-gray-300 text-sm">
-                          <span className="text-gray-400">Area:</span> {gym.area}
-                        </p>
-                      )}
-                    </div>
-                    <div>
-                      {getStatusBadge(gym.call_status)}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2 text-sm">
-                    <p className="text-gray-300">
-                      <span className="text-gray-400">Telecaller:</span> {gym.telecaller_name || 'Unassigned'}
-                    </p>
-                    <p className="text-gray-300">
-                      <span className="text-gray-400">GYM Contact:</span> {gym.contact_number}
-                    </p>
-                    {gym.target_date && gym.call_status === 'pending' && (
-                      <p className="text-orange-400">
-                        <span className="text-gray-400">Target:</span> {formatDateOnly(gym.target_date)}
-                      </p>
-                    )}
-                    {gym.address && (
-                      <p className="text-gray-300">
-                        <span className="text-gray-400">Address:</span> {gym.address}
-                      </p>
-                    )}
-                    {/* Show verification status for converted gyms */}
-                    {gym.call_status === 'converted' && gym.last_call_details?.converted_status && (
-                      <div className="mt-2 pt-2 border-t border-gray-600 flex items-center justify-between">
-                        <span className="text-xs text-gray-400">Verification Status:</span>
-                        {(() => {
-                          const { converted_status } = gym.last_call_details;
-                          const allComplete = (
-                            converted_status.document_uploaded &&
-                            converted_status.membership_plan_created &&
-                            converted_status.session_created &&
-                            converted_status.daily_pass_created &&
-                            converted_status.gym_studio_images_uploaded &&
-                            converted_status.agreement_signed
-                          );
-                          return allComplete ? (
-                            <span className="text-green-400 text-lg">✔</span>
-                          ) : (
-                            <span className="text-red-400 text-lg">✖</span>
-                          );
-                        })()}
+          <div className="overflow-x-auto">
+            <table className="w-full bg-gray-800 rounded-lg overflow-hidden">
+              <thead className="bg-gray-700">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                    Gym Details
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                    Phone Number
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                    Location
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                    Telecaller
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                    Target Date
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                    Assigned On
+                  </th>
+                  {activeTab !== 'pending' && (
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  )}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-600">
+                {gyms.map((gym) => (
+                  <tr
+                    key={gym.gym_id}
+                    className="hover:bg-gray-700/50 transition-colors"
+                  >
+                    <td className="px-6 py-4 relative">
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm font-medium text-white">
+                          {gym.gym_name}
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewAddress(gym);
+                          }}
+                          className="text-gray-400 hover:text-blue-400 transition-colors flex items-center"
+                          title="View Full Address"
+                        >
+                          <Info className="w-4 h-4" />
+                        </button>
                       </div>
-                    )}
-                  </div>
-
-                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-600">
-                    <div className="text-xs text-gray-400">
-                      Assigned: {gym.assigned_at ? formatDate(gym.assigned_at) : 'Not assigned'}
-                    </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-300">
+                        {gym.contact_number || 'N/A'}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-300">
+                        {gym.city || 'N/A'}
+                        {gym.area && `, ${gym.area}`}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-300">
+                        {gym.telecaller_name || 'Unassigned'}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`px-2 py-1 inline-flex text-xs leading-4 font-medium rounded-full whitespace-nowrap ${
+                          gym.call_status === 'converted' ? 'bg-green-100 text-green-800' :
+                          gym.call_status === 'rejected' ? 'bg-red-100 text-red-800' :
+                          gym.call_status === 'follow_up' ? 'bg-blue-100 text-blue-800' :
+                          gym.call_status === 'no_response' ? 'bg-gray-100 text-gray-800' :
+                          'bg-yellow-100 text-yellow-800'
+                        }`}
+                      >
+                        {TABS.find(tab => tab.id === gym.call_status)?.name || gym.call_status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-300">
+                        {gym.target_date ? formatDateOnly(gym.target_date) : 'N/A'}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-300">
+                        {gym.assigned_at ? formatDateOnly(gym.assigned_at) : 'N/A'}
+                      </div>
+                    </td>
                     {activeTab !== 'pending' && (
-                      <div className="flex gap-2">
+                      <td className="px-6 py-4">
                         <button
                           onClick={() => handleViewHistory(gym)}
-                          className="px-3 py-1.5 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors text-xs"
+                          className="px-3 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors text-sm font-medium"
                           title="View Call History"
                         >
                           <Clock className="w-4 h-4" />
                         </button>
-                      </div>
+                      </td>
                     )}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Pagination */}
-            {pagination.totalPages > 1 && (
-              <div className="flex items-center justify-between mt-6">
-                <div className="text-sm text-gray-400">
-                  Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
-                  {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
-                  {pagination.total} gyms
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handlePageChange(Math.max(1, pagination.page - 1))}
-                    disabled={pagination.page === 1}
-                    className="px-3 py-1 text-sm border border-gray-600 rounded hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Previous
-                  </button>
-                  <span className="text-sm text-gray-300">
-                    Page {pagination.page} of {pagination.totalPages}
-                  </span>
-                  <button
-                    onClick={() => handlePageChange(Math.min(pagination.page + 1, pagination.totalPages))}
-                    disabled={pagination.page === pagination.totalPages}
-                    className="px-3 py-1 text-sm border border-gray-600 rounded hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
-            )}
-          </>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
+
+      {/* Pagination */}
+      {pagination.totalPages > 1 && (
+        <div className="card mt-4 p-4">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-400">
+              Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
+              {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
+              {pagination.total} gyms
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handlePageChange(Math.max(1, pagination.page - 1))}
+                disabled={pagination.page === 1}
+                className="px-3 py-1 text-sm border border-gray-600 rounded hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <span className="text-sm text-gray-300">
+                Page {pagination.page} of {pagination.totalPages}
+              </span>
+              <button
+                onClick={() => handlePageChange(Math.min(pagination.page + 1, pagination.totalPages))}
+                disabled={pagination.page === pagination.totalPages}
+                className="px-3 py-1 text-sm border border-gray-600 rounded hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* History Modal */}
       {showHistoryModal && selectedGym && (
@@ -845,6 +872,55 @@ export default function ManagerTracker() {
                   </div>
                 ))
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Address Modal */}
+      {showAddressModal && selectedGymAddress && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-white">
+                {selectedGymAddress.gym_name}
+              </h3>
+              <button
+                onClick={() => setShowAddressModal(false)}
+                className="text-gray-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <p className="text-sm font-medium text-gray-400">Phone Number</p>
+                <p className="text-white">
+                  {selectedGymAddress.contact_number || 'N/A'}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-sm font-medium text-gray-400">Full Address</p>
+                <p className="text-white">
+                  {selectedGymAddress.address || 'N/A'}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-sm font-medium text-gray-400">Area</p>
+                <p className="text-white">
+                  {selectedGymAddress.area || 'N/A'}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-sm font-medium text-gray-400">City</p>
+                <p className="text-white">
+                  {selectedGymAddress.city || 'N/A'}
+                </p>
+              </div>
             </div>
           </div>
         </div>
