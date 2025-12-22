@@ -271,8 +271,15 @@ export default function Tracker() {
     // If no remarks passed, use formData.remarks
     const finalRemarks = remarks || formData.remarks;
 
-    // If status is "No Response", submit directly without converted status
+    // Validate remarks for all statuses except "no_response"
+    if (status !== 'no_response' && !finalRemarks.trim()) {
+      setError('Remarks are required for this status');
+      return;
+    }
+
+    // If status is "No Response", use default remark if none provided
     if (status === 'no_response') {
+      const noResponseRemarks = finalRemarks.trim() || 'No Response';
       try {
         const payload = {
           gym_id: selectedGym.gym_id,
@@ -282,7 +289,7 @@ export default function Tracker() {
             total_members: formData.total_members ? parseInt(formData.total_members) : null,
             new_contact_number: formData.new_contact_number || null,
             feature_explained: formData.feature_explained,
-            remarks: finalRemarks,
+            remarks: noResponseRemarks,
           },
           follow_up_date: followUpDate || null,
         };
@@ -836,7 +843,8 @@ export default function Tracker() {
                           converted_status.membership_plan_created &&
                           converted_status.session_created &&
                           converted_status.daily_pass_created &&
-                          converted_status.gym_studio_images_uploaded
+                          converted_status.gym_studio_images_uploaded &&
+                          converted_status.agreement_signed
                         );
                         return allComplete ? (
                           <span className="text-green-400 text-lg">✔</span>
@@ -891,9 +899,17 @@ export default function Tracker() {
       {showCallModal && selectedGym && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <h3 className="text-xl font-bold text-white mb-4">
-              Log Call - {selectedGym.gym_name}
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-white">
+                Log Call - {selectedGym.gym_name}
+              </h3>
+              <button
+                onClick={() => setShowCallModal(false)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
             {/* Form Fields */}
             <div className="space-y-4 mb-4">

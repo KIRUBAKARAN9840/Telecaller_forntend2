@@ -19,6 +19,7 @@ import {
   CalendarDays,
   Camera,
   Signature,
+  X,
 } from 'lucide-react';
 import api from '@/lib/axios';
 
@@ -97,15 +98,16 @@ export default function TelecallerGymsPage() {
   };
 
   const handleStatusSubmit = async (status) => {
-    // Validate remarks
-    if (!formData.remarks.trim()) {
-      setError('Remarks are required');
+    // Validate remarks for all statuses except "no_response"
+    if (status !== 'no_response' && !formData.remarks.trim()) {
+      setError('Remarks are required for this status');
       return;
     }
 
-    // If status is "No Response", proceed without additional data
+    // If status is "No Response", use default remark if none provided
     if (status === 'no_response') {
-      await submitCallLog(status);
+      const finalRemarks = formData.remarks.trim() || 'No Response';
+      await submitCallLog(status, null, finalRemarks);
       return;
     }
 
@@ -120,7 +122,7 @@ export default function TelecallerGymsPage() {
     await submitCallLog(status);
   };
 
-  const submitCallLog = async (status, convertedData = null) => {
+  const submitCallLog = async (status, convertedData = null, customRemarks = null) => {
     try {
       const payload = {
         gym_id: selectedGym.id,
@@ -130,7 +132,7 @@ export default function TelecallerGymsPage() {
           total_members: formData.total_members ? parseInt(formData.total_members) : null,
           new_contact_number: formData.new_contact_number || null,
           feature_explained: formData.feature_explained,
-          remarks: formData.remarks,
+          remarks: customRemarks || formData.remarks,
         },
         follow_up_date: followUpDate || null,
       };
@@ -316,9 +318,17 @@ export default function TelecallerGymsPage() {
       {showCallModal && selectedGym && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-gray-800 rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <h3 className="text-xl font-bold text-white mb-6">
-              Log Call - {selectedGym.name}
-            </h3>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-white">
+                Log Call - {selectedGym.name}
+              </h3>
+              <button
+                onClick={() => setShowCallModal(false)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
             {/* Form Fields */}
             <div className="space-y-4 mb-6">
@@ -419,19 +429,22 @@ export default function TelecallerGymsPage() {
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => handleStatusSubmit('interested')}
-                  className="btn-outline text-green-400 border-green-600 hover:bg-green-900/20"
+                  disabled={!formData.remarks.trim()}
+                  className="btn-outline text-green-400 border-green-600 hover:bg-green-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Interested
                 </button>
                 <button
                   onClick={() => handleStatusSubmit('not_interested')}
-                  className="btn-outline text-red-400 border-red-600 hover:bg-red-900/20"
+                  disabled={!formData.remarks.trim()}
+                  className="btn-outline text-red-400 border-red-600 hover:bg-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Not Interested
                 </button>
                 <button
                   onClick={() => handleStatusSubmit('follow_up')}
-                  className="btn-outline text-blue-400 border-blue-600 hover:bg-blue-900/20"
+                  disabled={!formData.remarks.trim()}
+                  className="btn-outline text-blue-400 border-blue-600 hover:bg-blue-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Follow Up
                 </button>
@@ -443,7 +456,8 @@ export default function TelecallerGymsPage() {
                 </button>
                 <button
                   onClick={() => handleStatusSubmit('converted')}
-                  className="btn-outline text-green-500 border-green-500 hover:bg-green-900/20 col-span-2"
+                  disabled={!formData.remarks.trim()}
+                  className="btn-outline text-green-500 border-green-500 hover:bg-green-900/20 col-span-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Converted
                 </button>

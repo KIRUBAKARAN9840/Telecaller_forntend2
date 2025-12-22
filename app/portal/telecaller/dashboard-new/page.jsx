@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Building2, Phone, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Building2, Phone, Clock, CheckCircle, XCircle, AlertCircle, X } from 'lucide-react';
 import api from '@/lib/axios';
 
 const TABS = [
@@ -195,7 +195,15 @@ function CallModal({ gym, onClose, onSave }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md">
-        <h2 className="text-xl font-bold text-white mb-4">Log Call - {gym.gym_name}</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold text-white">Log Call - {gym.gym_name}</h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-white transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
         <form onSubmit={handleSubmit}>
           <div className="mb-4">

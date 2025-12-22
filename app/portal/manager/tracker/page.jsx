@@ -711,7 +711,8 @@ export default function ManagerTracker() {
                             converted_status.membership_plan_created &&
                             converted_status.session_created &&
                             converted_status.daily_pass_created &&
-                            converted_status.gym_studio_images_uploaded
+                            converted_status.gym_studio_images_uploaded &&
+                            converted_status.agreement_signed
                           );
                           return allComplete ? (
                             <span className="text-green-400 text-lg">✔</span>
