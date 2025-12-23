@@ -1,1 +1,8 @@
-{}
+{
+  "/page": "app/page.js",
+  "/portal/manager/telecaller-performance/page": "app/portal/manager/telecaller-performance/page.js",
+  "/portal/manager/assign-gym/page": "app/portal/manager/assign-gym/page.js",
+  "/portal/manager/telecallers/page": "app/portal/manager/telecallers/page.js",
+  "/portal/manager/dashboard/page": "app/portal/manager/dashboard/page.js",
+  "/portal/manager/tracker/page": "app/portal/manager/tracker/page.js"
+}

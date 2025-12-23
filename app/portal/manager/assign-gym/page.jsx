@@ -12,6 +12,7 @@ import {
   X,
   Plus,
   UserMinus,
+  Info,
 } from 'lucide-react';
 import api from '@/lib/axios';
 import DatePicker from '@/app/portal/components/DatePicker';
@@ -48,6 +49,15 @@ export default function AssignGymPage() {
   const [unassignError, setUnassignError] = useState('');
   const [showMultiSelectOptions, setShowMultiSelectOptions] = useState(false);
   const [targetDate, setTargetDate] = useState('');
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [selectedGymAddress, setSelectedGymAddress] = useState(null);
+
+  // Filter states
+  const [cityFilter, setCityFilter] = useState('');
+  const [areaFilter, setAreaFilter] = useState('');
+  const [allCities, setAllCities] = useState([]);
+  const [cityAreaMap, setCityAreaMap] = useState({}); // Map of city -> areas array
+  const [filtersLoading, setFiltersLoading] = useState(false);
 
   useEffect(() => {
     if (!telecallerId) {
@@ -59,6 +69,7 @@ export default function AssignGymPage() {
     setLoading(true);
     fetchGyms();
     fetchAssignments();
+    fetchAllCitiesAndAreas();
   }, [telecallerId]);
 
   const fetchGyms = async () => {
@@ -66,7 +77,9 @@ export default function AssignGymPage() {
     console.log('Current params:', {
       page: pagination.page,
       limit: pagination.limit,
-      search: search
+      search: search,
+      cityFilter,
+      areaFilter
     });
 
     try {
@@ -75,7 +88,9 @@ export default function AssignGymPage() {
         params: {
           page: pagination.page,
           limit: pagination.limit,
-          search: search
+          search: search,
+          city: cityFilter || undefined,
+          area: areaFilter || undefined
         }
       });
 
@@ -83,14 +98,13 @@ export default function AssignGymPage() {
       console.log('📊 Response data:', response.data);
 
       setGyms(response.data.gyms || []);
-      // Update pagination totals only if not already set
-      if (pagination.total === 0) {
-        setPagination(prev => ({
-          ...prev,
-          total: response.data.total || 0,
-          totalPages: response.data.total_pages || 1,
-        }));
-      }
+
+      // Update pagination totals
+      setPagination(prev => ({
+        ...prev,
+        total: response.data.total || 0,
+        totalPages: response.data.total_pages || 1,
+      }));
     } catch (error) {
       console.error('❌ Failed to fetch gyms - Full error:', error);
       console.error('❌ Error response:', error.response);
@@ -119,10 +133,25 @@ export default function AssignGymPage() {
     return () => clearTimeout(timer);
   }, [search, telecallerId]);
 
+  // Effect to fetch gyms when city or area filter changes
+  useEffect(() => {
+    if (!telecallerId) return;
+
+    // Reset to page 1 when filters change
+    setPagination(prev => ({ ...prev, page: 1 }));
+    fetchGyms();
+  }, [cityFilter, areaFilter]);
+
+  // Effect to reset area filter when city changes
+  useEffect(() => {
+    // Reset area filter when city changes
+    setAreaFilter('');
+  }, [cityFilter]);
+
   // Effect to fetch gyms when page changes
   useEffect(() => {
     if (telecallerId && pagination.page > 0 && search === '') {
-      fetchGyms(); // Only fetch on page change if not searching
+      fetchGyms();
     }
   }, [pagination.page]);
 
@@ -143,6 +172,72 @@ export default function AssignGymPage() {
       console.error('❌ Failed to fetch assignments - Full error:', error);
       console.error('❌ Error status:', error.response?.status);
       console.error('❌ Error data:', error.response?.data);
+    }
+  };
+
+  const fetchAllCitiesAndAreas = async () => {
+    console.log('🔍 fetchAllCitiesAndAreas called');
+    setFiltersLoading(true);
+
+    try {
+      const allCitiesSet = new Set();
+      const cityAreasMap = {}; // Will store city -> Set of areas mapping
+      let page = 1;
+      let hasMorePages = true;
+
+      // Fetch all pages to accumulate unique cities and areas
+      while (hasMorePages) {
+        console.log(`📡 Fetching page ${page} for cities/areas`);
+        const response = await api.get('/telecaller/manager/gyms/all', {
+          params: {
+            page: page,
+            limit: 100 // Use higher limit to fetch faster
+          }
+        });
+
+        const gyms = response.data.gyms || [];
+
+        // Accumulate cities and areas by city
+        gyms.forEach(gym => {
+          if (gym.city) {
+            allCitiesSet.add(gym.city);
+
+            // Initialize area set for this city if not exists
+            if (!cityAreasMap[gym.city]) {
+              cityAreasMap[gym.city] = new Set();
+            }
+
+            // Add area to this city's set
+            if (gym.area) {
+              cityAreasMap[gym.city].add(gym.area);
+            }
+          }
+        });
+
+        // Check if there are more pages
+        const totalPages = response.data.total_pages || 1;
+        hasMorePages = page < totalPages;
+        page++;
+      }
+
+      // Convert Sets to sorted arrays
+      const citiesArray = Array.from(allCitiesSet).sort();
+
+      // Convert cityAreasMap Sets to sorted arrays
+      const cityAreasMapArray = {};
+      Object.keys(cityAreasMap).forEach(city => {
+        cityAreasMapArray[city] = Array.from(cityAreasMap[city]).sort();
+      });
+
+      console.log('✅ Total unique cities:', citiesArray.length);
+      console.log('✅ City areas map:', Object.keys(cityAreasMapArray).length, 'cities with areas');
+
+      setAllCities(citiesArray);
+      setCityAreaMap(cityAreasMapArray);
+    } catch (error) {
+      console.error('❌ Failed to fetch cities/areas:', error);
+    } finally {
+      setFiltersLoading(false);
     }
   };
 
@@ -227,7 +322,7 @@ export default function AssignGymPage() {
   };
 
   const selectMultipleGyms = (count) => {
-    const unassignedGyms = sortedGyms.filter(gym => !isGymAssigned(gym.id));
+    const unassignedGyms = filteredGyms.filter(gym => !isGymAssigned(gym.id));
     const alreadySelectedIds = selectedGyms.map(g => g.id);
 
     // Get unassigned gyms that are not already selected
@@ -246,7 +341,7 @@ export default function AssignGymPage() {
   };
 
   const getAvailableGymCount = () => {
-    const unassignedGyms = sortedGyms.filter(gym => !isGymAssigned(gym.id));
+    const unassignedGyms = filteredGyms.filter(gym => !isGymAssigned(gym.id));
     const alreadySelectedIds = selectedGyms.map(g => g.id);
     const availableGyms = unassignedGyms.filter(gym => !alreadySelectedIds.includes(gym.id));
     return availableGyms.length;
@@ -271,6 +366,12 @@ export default function AssignGymPage() {
 
     setUnassignError('');
     setShowUnassignModal(true);
+  };
+
+  const handleViewAddress = (e, gym) => {
+    e.stopPropagation(); // Prevent row click
+    setSelectedGymAddress(gym);
+    setShowAddressModal(true);
   };
 
   const confirmUnassignGym = async () => {
@@ -311,6 +412,22 @@ export default function AssignGymPage() {
     if (aAssigned && !bAssigned) return 1;
     if (!aAssigned && bAssigned) return -1;
     return 0;
+  });
+
+  // Filter gyms based on search only (city and area are now filtered on server side)
+  const filteredGyms = sortedGyms.filter((gym) => {
+    // Search filter (client-side for immediate feedback)
+    if (search) {
+      const searchLower = search.toLowerCase();
+      const matchesSearch =
+        gym.gym_name?.toLowerCase().includes(searchLower) ||
+        gym.city?.toLowerCase().includes(searchLower) ||
+        gym.area?.toLowerCase().includes(searchLower) ||
+        gym.contact_number?.includes(search);
+      if (!matchesSearch) return false;
+    }
+
+    return true;
   });
 
   if (loading) {
@@ -447,102 +564,176 @@ export default function AssignGymPage() {
         </div>
       )}
 
-      {/* Search */}
+      {/* Search & Filters */}
       <div className="card p-4 mb-6">
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <input
-            type="text"
-            placeholder="Search gyms by name, city, or phone..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="input-field pl-10 w-full"
-          />
+        <div className="flex flex-wrap gap-4 items-end">
+          {/* Search */}
+          <div className="relative flex-1 min-w-[200px] max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <input
+              type="text"
+              placeholder="Search gyms by name, city, or phone..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="input-field pl-10 w-full"
+            />
+          </div>
+
+          {/* City Filter */}
+          <div className="flex-1 min-w-[150px] max-w-[200px]">
+            <select
+              value={cityFilter}
+              onChange={(e) => setCityFilter(e.target.value)}
+              className="input-field w-full"
+              disabled={filtersLoading}
+            >
+              <option value="">All Cities</option>
+              {allCities.map(city => (
+                <option key={city} value={city}>{city}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Area Filter */}
+          <div className="flex-1 min-w-[150px] max-w-[200px]">
+            <select
+              value={areaFilter}
+              onChange={(e) => setAreaFilter(e.target.value)}
+              className="input-field w-full"
+              disabled={filtersLoading || !cityFilter}
+            >
+              <option value="">All Areas</option>
+              {cityFilter && cityAreaMap[cityFilter] && cityAreaMap[cityFilter].map(area => (
+                <option key={area} value={area}>{area}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Clear Filters */}
+          {(search || cityFilter || areaFilter) && (
+            <button
+              onClick={() => {
+                setSearch('');
+                setCityFilter('');
+                setAreaFilter('');
+              }}
+              className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors text-sm"
+            >
+              Clear Filters
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Gyms Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {sortedGyms.map((gym) => {
-          const isAssigned = isGymAssigned(gym.id);
-          const assignment = getAssignmentDetails(gym.id);
-          const isSelected = selectedGyms.some(g => g.id === gym.id);
+      {/* Gyms Table */}
+      <div className="card overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-700">
+              <tr>
+                <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                  Gym Details
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                  Location
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                  Phone Number
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-600">
+              {filteredGyms.map((gym) => {
+                const isAssigned = isGymAssigned(gym.id);
+                const assignment = getAssignmentDetails(gym.id);
+                const isSelected = selectedGyms.some(g => g.id === gym.id);
 
-          return (
-            <div
-              key={gym.id}
-              onClick={() => handleGymClick(gym)}
-              className={`card p-6 cursor-pointer transition-all hover:scale-105 ${
-                isAssigned
-                  ? 'opacity-60 bg-gray-800/50 hover:scale-100'
-                  : isSelected
-                  ? 'ring-2 ring-red-500 bg-red-900/20'
-                  : 'hover:bg-gray-800/50'
-              }`}
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="w-12 h-12 bg-red-600/20 rounded-lg flex items-center justify-center">
-                  <Building2 className="w-6 h-6 text-red-400" />
-                </div>
-                <div className="flex items-center gap-2">
-                  {!isAssigned && isSelected && (
-                    <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
-                      <Plus className="w-4 h-4 text-white transform rotate-45" />
-                    </div>
-                  )}
-                  {isAssigned && (
-                    <span className="px-2 py-1 bg-yellow-900/30 text-yellow-400 text-xs rounded-full">
-                      Assigned
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <h3 className="text-lg font-semibold text-white mb-2">{gym.gym_name}</h3>
-
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2 text-gray-400">
-                  <MapPin className="w-4 h-4" />
-                  <span>{gym.city || 'No location'}</span>
-                </div>
-
-                <div className="flex items-center gap-2 text-gray-400">
-                  <Phone className="w-4 h-4" />
-                  <span>{gym.contact_number || 'No phone'}</span>
-                </div>
-
-                {isAssigned && assignment && (
-                  <div className="mt-4 pt-4 border-t border-gray-700">
-                    <div className="flex items-center gap-2 text-gray-400 text-xs mb-1">
-                      <User className="w-3 h-3" />
-                      <span>Assigned to: {assignment.telecaller_name}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-400 text-xs mb-1">
-                      <Calendar className="w-3 h-3" />
-                      <span>Assigned: {new Date(assignment.assigned_at).toLocaleDateString()}</span>
-                    </div>
-                    {assignment.target_date && (
-                      <div className="flex items-center gap-2 text-gray-400 text-xs">
-                        <Calendar className="w-3 h-3" />
-                        <span>Target: {new Date(assignment.target_date).toLocaleDateString()}</span>
+                return (
+                  <tr
+                    key={gym.id}
+                    onClick={() => handleGymClick(gym)}
+                    className={`cursor-pointer transition-colors ${
+                      isAssigned
+                        ? 'opacity-60 bg-gray-800/50 hover:bg-gray-700/50'
+                        : isSelected
+                        ? 'ring-2 ring-red-500 bg-red-900/20 hover:bg-red-900/30'
+                        : 'hover:bg-gray-700/50'
+                    }`}
+                  >
+                    {/* Gym Details Column */}
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-red-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                              <Building2 className="w-5 h-5 text-red-400" />
+                            </div>
+                            <div>
+                              <h3 className="text-white font-medium">{gym.gym_name}</h3>
+                              {isAssigned && assignment && (
+                                <div className="text-xs text-gray-400 mt-1">
+                                  <div className="flex items-center gap-1">
+                                    <User className="w-3 h-3" />
+                                    <span>{assignment.telecaller_name}</span>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0 ml-4">
+                          {!isAssigned && isSelected && (
+                            <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+                              <Plus className="w-4 h-4 text-white transform rotate-45" />
+                            </div>
+                          )}
+                          {isAssigned && (
+                            <span className="px-2 py-1 bg-yellow-900/30 text-yellow-400 text-xs rounded-full">
+                              Assigned
+                            </span>
+                          )}
+                          <button
+                            onClick={(e) => handleViewAddress(e, gym)}
+                            className="text-gray-400 hover:text-blue-400 transition-colors flex items-center p-1"
+                            title="View Full Address"
+                          >
+                            <Info className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
+                    </td>
+
+                    {/* Location Column */}
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2 text-gray-300 text-sm">
+                        <MapPin className="w-4 h-4 text-gray-400" />
+                        <span>{gym.city || 'No location'}</span>
+                      </div>
+                    </td>
+
+                    {/* Phone Number Column */}
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2 text-gray-300 text-sm">
+                        <Phone className="w-4 h-4 text-gray-400" />
+                        <span>{gym.contact_number || 'No phone'}</span>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {sortedGyms.length === 0 && !loading && (
+      {filteredGyms.length === 0 && !loading && (
         <div className="text-center py-12">
           <Building2 className="w-16 h-16 text-gray-600 mx-auto mb-4" />
           <p className="text-gray-400 text-lg">No gyms found</p>
         </div>
       )}
 
-      {/* Pagination */}
+      {/* Pagination - Show when there are multiple pages (regardless of filters) */}
       {!loading && pagination.totalPages > 1 && search === '' && (
         <div className="flex items-center justify-between mt-6 mb-8">
           <div className="text-sm text-gray-400">
@@ -572,10 +763,11 @@ export default function AssignGymPage() {
         </div>
       )}
 
+      {/* Filtered results count - show only when searching (not for city/area filters as they have pagination) */}
       {!loading && search !== '' && (
         <div className="flex items-center justify-between mt-6 mb-8">
           <div className="text-sm text-gray-400">
-            Found {gyms.length} gyms matching "{search}"
+            Found {filteredGyms.length} gyms matching "{search}"
           </div>
         </div>
       )}
@@ -754,6 +946,59 @@ export default function AssignGymPage() {
                     Assign {selectedGyms.filter(gym => !gym.isAssigned).length} Gym{selectedGyms.filter(gym => !gym.isAssigned).length > 1 ? 's' : ''}
                   </button>
                 )
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Address Modal */}
+      {showAddressModal && selectedGymAddress && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="card p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-white">
+                {selectedGymAddress.gym_name}
+              </h3>
+              <button
+                onClick={() => setShowAddressModal(false)}
+                className="text-gray-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <p className="text-sm font-medium text-gray-400">Phone Number</p>
+                <p className="text-white">
+                  {selectedGymAddress.contact_number || 'N/A'}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-sm font-medium text-gray-400">Location</p>
+                <p className="text-white">
+                  {selectedGymAddress.city || 'N/A'}
+                </p>
+              </div>
+
+              {selectedGymAddress.address && (
+                <div>
+                  <p className="text-sm font-medium text-gray-400">Full Address</p>
+                  <p className="text-white">
+                    {selectedGymAddress.address}
+                  </p>
+                </div>
+              )}
+
+              {selectedGymAddress.area && (
+                <div>
+                  <p className="text-sm font-medium text-gray-400">Area</p>
+                  <p className="text-white">
+                    {selectedGymAddress.area}
+                  </p>
+                </div>
               )}
             </div>
           </div>
