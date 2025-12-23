@@ -56,9 +56,9 @@ export default function TelecallerLayout({ children }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 flex">
-      {/* Sidebar - Hidden on mobile, visible on desktop */}
-      <div className="hidden lg:block">
+    <div className="h-screen bg-gray-900 flex overflow-hidden">
+      {/* Sidebar - Fixed on desktop, hidden on mobile */}
+      <div className="hidden lg:block fixed left-0 top-0 h-full z-40">
         <Sidebar
           isOpen={true}
           onClose={() => setSidebarOpen(false)}
@@ -83,17 +83,19 @@ export default function TelecallerLayout({ children }) {
       )}
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col lg:ml-0">
-        {/* Header */}
-        <Header
-          user={user}
-          onLogout={handleLogout}
-          sidebarOpen={sidebarOpen}
-          setSidebarOpen={setSidebarOpen}
-        />
+      <div className="flex-1 flex flex-col lg:ml-64 h-screen overflow-hidden">
+        {/* Header - Fixed at top */}
+        <div className="fixed top-0 right-0 left-0 lg:left-64 z-30 bg-gray-900">
+          <Header
+            user={user}
+            onLogout={handleLogout}
+            sidebarOpen={sidebarOpen}
+            setSidebarOpen={setSidebarOpen}
+          />
+        </div>
 
-        {/* Page Content */}
-        <main className="flex-1 bg-gray-900 overflow-y-auto">
+        {/* Page Content - Scrollable area */}
+        <main className="flex-1 bg-gray-900 overflow-y-auto pt-[4rem]">
           {children}
         </main>
       </div>

@@ -44,7 +44,7 @@ export default function Home() {
     <main className="min-h-screen bg-gray-900 flex items-center justify-center px-4">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">FittBot Telecaller</h1>
+          <h1 className="text-3xl font-bold text-white mb-2"><span className="text-[#ff5757]">Fitt</span>Bot Telecaller</h1>
           <p className="text-gray-400">Management Dashboard</p>
         </div>
 

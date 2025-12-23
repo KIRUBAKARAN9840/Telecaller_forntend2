@@ -32,7 +32,7 @@ export default function Header({ user, onLogout, sidebarOpen, setSidebarOpen }) 
   };
 
   return (
-    <header className="bg-gray-800 border-b border-gray-700 px-4 py-3 sticky top-0 z-30">
+    <header className="bg-gray-800 border-b border-gray-700 px-4 h-16 flex items-center sticky top-0 z-30">
       <div className="flex items-center justify-between w-full">
         <div className="flex items-center">
           <button

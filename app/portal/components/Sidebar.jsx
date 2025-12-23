@@ -36,7 +36,7 @@ export default function Sidebar({ isOpen, onClose, userRole }) {
       `}>
         {/* Header */}
         <div className="flex items-center justify-between h-16 px-6 border-b border-gray-700">
-          <h2 className="text-xl font-bold text-white">FittBot</h2>
+          <h2 className="text-xl font-bold text-white"><span className="text-[#ff5757]">Fitt</span>Bot</h2>
           <button
             onClick={onClose}
             className="lg:hidden p-1 rounded-md text-gray-400 hover:text-white hover:bg-gray-700"

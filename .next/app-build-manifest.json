@@ -30,6 +30,16 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/portal/manager/telecaller-performance/page.js"
+    ],
+    "/portal/manager/dashboard/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/portal/manager/dashboard/page.js"
+    ],
+    "/portal/manager/assign-gym/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/portal/manager/assign-gym/page.js"
     ]
   }
 }

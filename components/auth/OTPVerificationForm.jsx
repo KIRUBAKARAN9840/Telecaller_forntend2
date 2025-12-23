@@ -8,7 +8,7 @@ export default function OTPVerificationForm({ mobileNumber, userType, onBack, on
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [timeLeft, setTimeLeft] = useState(300); // 5 minutes in seconds
+  const [timeLeft, setTimeLeft] = useState(60); // 60 seconds
   const [canResend, setCanResend] = useState(false);
 
   // Countdown timer
@@ -121,7 +121,7 @@ export default function OTPVerificationForm({ mobileNumber, userType, onBack, on
 
       if (response.ok) {
         setOtp(['', '', '', '', '', '']);
-        setTimeLeft(300);
+        setTimeLeft(60);
         setCanResend(false);
       } else {
         setError(data.detail || 'Failed to resend OTP');
