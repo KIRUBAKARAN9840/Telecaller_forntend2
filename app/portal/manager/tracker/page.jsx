@@ -163,6 +163,7 @@ export default function ManagerTracker() {
         call_status: assignment.current_call_status || 'pending',
         assigned_at: assignment.assigned_at,
         target_date: assignment.target_date,
+        follow_up_date: assignment.follow_up_date,
         contact_number: assignment.contact_number || 'Not available',
         address: assignment.address || '',
         area: assignment.area || '',
@@ -670,17 +671,21 @@ export default function ManagerTracker() {
                     Phone Number
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                    Location
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                     Telecaller
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                    Target Date
-                  </th>
+                  {activeTab === 'pending' && (
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                      Target Date
+                    </th>
+                  )}
+                  {activeTab === 'follow_up' && (
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                      Follow-up Date
+                    </th>
+                  )}
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                     Assigned On
                   </th>
@@ -721,12 +726,6 @@ export default function ManagerTracker() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-300">
-                        {gym.city || 'N/A'}
-                        {gym.area && `, ${gym.area}`}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-300">
                         {gym.telecaller_name || 'Unassigned'}
                       </div>
                     </td>
@@ -743,11 +742,20 @@ export default function ManagerTracker() {
                         {TABS.find(tab => tab.id === gym.call_status)?.name || gym.call_status}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-300">
-                        {gym.target_date ? formatDateOnly(gym.target_date) : 'N/A'}
-                      </div>
-                    </td>
+                    {activeTab === 'pending' && (
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-300">
+                          {gym.target_date ? formatDateOnly(gym.target_date) : 'N/A'}
+                        </div>
+                      </td>
+                    )}
+                    {activeTab === 'follow_up' && (
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-300">
+                          {gym.follow_up_date ? formatDateOnly(gym.follow_up_date) : 'N/A'}
+                        </div>
+                      </td>
+                    )}
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-300">
                         {gym.assigned_at ? formatDateOnly(gym.assigned_at) : 'N/A'}

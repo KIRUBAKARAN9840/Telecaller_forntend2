@@ -17,6 +17,7 @@ import {
   Save,
   X,
   Signature,
+  Info,
 } from 'lucide-react';
 import api from '@/lib/axios';
 
@@ -41,6 +42,8 @@ export default function Tracker() {
   const [showConvertedEditModal, setShowConvertedEditModal] = useState(false);
   const [showConvertedModal, setShowConvertedModal] = useState(false);
   const [showFollowUpDatePicker, setShowFollowUpDatePicker] = useState(false);
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [selectedGymAddress, setSelectedGymAddress] = useState(null);
   const [editFormData, setEditFormData] = useState({
     document_uploaded: false,
     membership_plan_created: false,
@@ -400,6 +403,28 @@ export default function Tracker() {
     }
   };
 
+  const handleViewAddress = (gym) => {
+    setSelectedGymAddress(gym);
+    setShowAddressModal(true);
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'converted':
+        return 'bg-green-100 text-green-800';
+      case 'rejected':
+        return 'bg-red-100 text-red-800';
+      case 'follow_up':
+        return 'bg-blue-100 text-blue-800';
+      case 'no_response':
+        return 'bg-gray-100 text-gray-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return null;
     const date = new Date(dateString);
@@ -426,12 +451,7 @@ export default function Tracker() {
 
   return (
     <div className="p-6 min-h-screen bg-gray-900 text-white">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold mb-2">Call Tracker</h1>
-        <p className="text-gray-400">Track and manage your gym call activities</p>
-      </div>
-
+  
       {/* Tabs */}
       <div className="mb-6 border-b border-gray-700">
         <div className="flex space-x-1">
@@ -795,103 +815,172 @@ export default function Tracker() {
           <p className="text-gray-400 text-lg">No gyms found in {activeTab}</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {gyms.map((gym) => (
-            <div key={gym.gym_id} className="bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors border border-gray-700 flex flex-col h-full">
-              {/* Header Section */}
-              <div className="p-4 pb-2">
-                <div className="flex justify-between items-start mb-3">
-                  <h3 className="text-white font-semibold text-lg flex-1 pr-2">{gym.gym_name}</h3>
-                  <span className={`px-2 py-1 rounded text-xs font-medium bg-gray-700 text-gray-300 whitespace-nowrap`}>
-                    {TABS.find(t => t.id === gym.call_status)?.name || gym.call_status}
-                  </span>
-                </div>
-              </div>
-
-              {/* Content Section - Can grow */}
-              <div className="px-4 pb-2 flex-grow">
-                <div className="space-y-2 text-sm">
-                  <p className="text-gray-300">
-                    <span className="text-gray-400">Phone:</span> {gym.contact_number}
-                  </p>
-                  <p className="text-gray-300">
-                    <span className="text-gray-400">City:</span> {gym.city}
-                  </p>
-                  {gym.target_date && gym.call_status === 'pending' && (
-                    <p className="text-orange-400">
-                      <span className="text-gray-400">Target:</span> {formatDateOnly(gym.target_date)}
-                    </p>
+        <div className="bg-gray-800 rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-700 bg-gray-900">
+                  <th className="text-left p-4 font-medium text-gray-300">Gym Details</th>
+                  <th className="text-left p-4 font-medium text-gray-300">Phone Number</th>
+                  <th className="text-left p-4 font-medium text-gray-300">Status</th>
+                  {activeTab === 'pending' && (
+                    <th className="text-left p-4 font-medium text-gray-300">
+                      Target Date
+                    </th>
                   )}
-                  {gym.last_call_date && (
-                    <p className="text-gray-300">
-                      <span className="text-gray-400">Last Call:</span> {formatDate(gym.last_call_date)}
-                    </p>
+                  {activeTab === 'follow_up' && (
+                    <th className="text-left p-4 font-medium text-gray-300">
+                      Follow-up Date
+                    </th>
                   )}
-                  {gym.follow_up_date && gym.call_status === 'follow_up' && (
-                    <p className="text-blue-400">
-                      <span className="text-gray-400">Follow-up:</span> {formatDate(gym.follow_up_date)}
-                    </p>
-                  )}
-                  {/* Show verification status for converted gyms */}
-                  {gym.call_status === 'converted' && gym.last_call_details?.converted_status && (
-                    <div className="mt-2 pt-2 border-t border-gray-700 flex items-center justify-between">
-                      <span className="text-xs text-gray-400">Verification Status:</span>
-                      {(() => {
-                        const { converted_status } = gym.last_call_details;
-                        const allComplete = (
-                          converted_status.document_uploaded &&
-                          converted_status.membership_plan_created &&
-                          converted_status.session_created &&
-                          converted_status.daily_pass_created &&
-                          converted_status.gym_studio_images_uploaded &&
-                          converted_status.agreement_signed
-                        );
-                        return allComplete ? (
-                          <span className="text-green-400 text-lg">✔</span>
-                        ) : (
-                          <span className="text-red-400 text-lg">✖</span>
-                        );
-                      })()}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Fixed Button Section - Always at bottom */}
-              <div className="p-4 pt-2 mt-auto">
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleCallClick(gym)}
-                    className="flex-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors py-2 px-4 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={gym.call_status === 'rejected'}
+                  {activeTab === 'converted' && <th className="text-left p-4 font-medium text-gray-300">Edit Converted</th>}
+                  {activeTab === 'converted' && <th className="text-left p-4 font-medium text-gray-300">Verification Status</th>}
+                  <th className="text-left p-4 font-medium text-gray-300">Log Call</th>
+                  {activeTab !== 'pending' && <th className="text-left p-4 font-medium text-gray-300">View History</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {gyms.map((gym) => (
+                  <tr
+                    key={gym.gym_id}
+                    className="border-b border-gray-700 hover:bg-gray-700/50 transition-colors"
                   >
-                    {gym.call_status === 'rejected'
-                      ? 'Status Closed'
-                      : <><Phone className="inline w-4 h-4 mr-2" /> Log Call</>
-                    }
-                  </button>
-                  {gym.call_status === 'converted' && (
-                    <button
-                      onClick={() => handleEditConvertedStatus(gym)}
-                      className="px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors text-sm font-medium"
-                      title="Edit Converted Status"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                  )}
-                  {activeTab !== 'pending' && (
-                    <button
-                      onClick={() => handleViewHistory(gym)}
-                      className="px-3 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors text-sm font-medium"
-                      title="View Follow-up History"
-                    >
-                      <Clock className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
+                    {/* Gym Details */}
+                    <td className="p-4 max-w-xs">
+                      <div className="flex justify-between items-start">
+                        <div className="min-w-0 flex-1 pr-3">
+                          <p className="text-white font-medium break-words">{gym.gym_name}</p>
+                        </div>
+                        <button
+                          onClick={() => handleViewAddress(gym)}
+                          className="text-gray-400 hover:text-blue-400 transition-colors flex-shrink-0 mt-1"
+                          title="View Address"
+                        >
+                          <Info className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+
+                    {/* Phone Number */}
+                    <td className="p-4">
+                      <div className="flex items-center space-x-2">
+                        <Phone className="w-4 h-4 text-gray-400" />
+                        <span className="text-gray-300">{gym.contact_number}</span>
+                      </div>
+                    </td>
+
+                    {/* Status */}
+                    <td className="p-4">
+                      <span className={`px-1.5 py-0.5 rounded text-xs font-medium whitespace-nowrap ${getStatusColor(gym.call_status)}`}>
+                        {TABS.find(t => t.id === gym.call_status)?.name || gym.call_status}
+                      </span>
+                    </td>
+
+                    {/* Target Date - Only show for pending tab */}
+                    {activeTab === 'pending' && (
+                      <td className="p-4">
+                        {gym.target_date && (
+                          <span className="text-orange-400">{formatDateOnly(gym.target_date)}</span>
+                        )}
+                      </td>
+                    )}
+
+                    {/* Follow-up Date - Only show for follow_up tab */}
+                    {activeTab === 'follow_up' && (
+                      <td className="p-4">
+                        {gym.follow_up_date && (
+                          <span className="text-blue-400">{formatDateOnly(gym.follow_up_date)}</span>
+                        )}
+                      </td>
+                    )}
+
+                    {/* Edit Converted - Only show for converted tab */}
+                    {activeTab === 'converted' && (
+                      <td className="p-4">
+                        <button
+                          onClick={() => handleEditConvertedStatus(gym)}
+                          className="btn-secondary flex items-center gap-2 text-sm"
+                          title="Edit Converted Status"
+                        >
+                          <Edit className="w-4 h-4" />
+                          Edit
+                        </button>
+                      </td>
+                    )}
+
+                    {/* Verification Status - Only show for converted tab */}
+                    {activeTab === 'converted' && (
+                      <td className="p-4">
+                        {(() => {
+                          // Get converted status from gym data - try multiple possible locations
+                          const convertedStatus = gym.converted_status ||
+                                               gym.last_call_details?.converted_status ||
+                                               {};
+
+                          // Check if all verification items are complete
+                          const allComplete = (
+                            convertedStatus.document_uploaded &&
+                            convertedStatus.membership_plan_created &&
+                            convertedStatus.session_created &&
+                            convertedStatus.daily_pass_created &&
+                            convertedStatus.gym_studio_images_uploaded &&
+                            convertedStatus.agreement_signed
+                          );
+
+                          return (
+                            <div className="flex items-center gap-1">
+                              {allComplete ? (
+                                <>
+                                  <CheckCircle className="w-4 h-4 text-green-400" />
+                                  <span className="text-xs text-green-400">Complete</span>
+                                </>
+                              ) : (
+                                <>
+                                  <XCircle className="w-4 h-4 text-red-400" />
+                                  <span className="text-xs text-red-400">Incomplete</span>
+                                </>
+                              )}
+                            </div>
+                          );
+                        })()}
+                      </td>
+                    )}
+
+                    {/* Log Call */}
+                    <td className="p-4">
+                      <button
+                        onClick={() => handleCallClick(gym)}
+                        className="btn-primary flex items-center gap-3 text-sm px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed min-w-[100px]"
+                        disabled={gym.call_status === 'rejected'}
+                      >
+                        {gym.call_status === 'rejected' ? (
+                          'Status Closed'
+                        ) : (
+                          <>
+                            <Phone className="w-4 h-4" />
+                            Call
+                          </>
+                        )}
+                      </button>
+                    </td>
+
+                    {/* View History - Only show for follow_up and converted tabs */}
+                    {activeTab !== 'pending' && (
+                      <td className="p-4">
+                        <button
+                          onClick={() => handleViewHistory(gym)}
+                          className="btn-secondary p-2 flex items-center justify-center"
+                          title="View Follow-up History"
+                        >
+                          <Clock className="w-4 h-4" />
+                        </button>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -1348,6 +1437,11 @@ export default function Tracker() {
                         <p className="text-xs text-gray-400">
                           {formatDate(log.created_at)}
                         </p>
+                        {log.call_status === 'follow_up' && log.follow_up_date && (
+                          <p className="text-xs text-blue-400 font-medium mt-1">
+                            Follow-up: {formatDate(log.follow_up_date)}
+                          </p>
+                        )}
                       </div>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         log.call_status === 'converted'
@@ -1370,6 +1464,86 @@ export default function Tracker() {
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Address Modal */}
+      {showAddressModal && selectedGymAddress && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-white">
+                Address - {selectedGymAddress.gym_name}
+              </h3>
+              <button
+                onClick={() => setShowAddressModal(false)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-sm">
+              {selectedGymAddress.contact_number && (
+                <p className="text-gray-300">
+                  <span className="text-gray-400 font-medium">Phone Number:</span>
+                  <span className="ml-2">{selectedGymAddress.contact_number}</span>
+                </p>
+              )}
+              {selectedGymAddress.address && (
+                <p className="text-gray-300">
+                  <span className="text-gray-400 font-medium">Address:</span>
+                  <div className="mt-1 text-gray-300">{selectedGymAddress.address}</div>
+                </p>
+              )}
+              {selectedGymAddress.area && (
+                <p className="text-gray-300">
+                  <span className="text-gray-400 font-medium">Area:</span>
+                  <span className="ml-2">{selectedGymAddress.area}</span>
+                </p>
+              )}
+              {selectedGymAddress.city && (
+                <p className="text-gray-300">
+                  <span className="text-gray-400 font-medium">City:</span>
+                  <span className="ml-2">{selectedGymAddress.city}</span>
+                </p>
+              )}
+              {selectedGymAddress.state && (
+                <p className="text-gray-300">
+                  <span className="text-gray-400 font-medium">State:</span>
+                  <span className="ml-2">{selectedGymAddress.state}</span>
+                </p>
+              )}
+              {selectedGymAddress.pincode && (
+                <p className="text-gray-300">
+                  <span className="text-gray-400 font-medium">Pincode:</span>
+                  <span className="ml-2">{selectedGymAddress.pincode}</span>
+                </p>
+              )}
+              {selectedGymAddress.google_location && (
+                <p className="text-gray-300">
+                  <span className="text-gray-400 font-medium">Location:</span>
+                  <a
+                    href={selectedGymAddress.google_location}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-2 text-blue-400 hover:text-blue-300 underline"
+                  >
+                    View on Google Maps
+                  </a>
+                </p>
+              )}
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setShowAddressModal(false)}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

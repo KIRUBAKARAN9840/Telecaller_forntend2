@@ -581,14 +581,18 @@ export default function TelecallerPerformancePage() {
                     Phone Number
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                    Location
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                    Target Date
-                  </th>
+                  {activeTab === 'pending' && (
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                      Target Date
+                    </th>
+                  )}
+                  {activeTab === 'follow_up' && (
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                      Follow-up Date
+                    </th>
+                  )}
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                     Assigned On
                   </th>
@@ -628,12 +632,6 @@ export default function TelecallerPerformancePage() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-300">
-                        {gym.city || 'N/A'}
-                        {gym.area && `, ${gym.area}`}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
                       <span
                         className={`px-2 py-1 inline-flex text-xs leading-4 font-medium rounded-full whitespace-nowrap ${
                           gym.call_status === 'converted' ? 'bg-green-100 text-green-800' :
@@ -646,11 +644,20 @@ export default function TelecallerPerformancePage() {
                         {TABS.find(tab => tab.id === gym.call_status)?.name || gym.call_status}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-300">
-                        {gym.target_date ? new Date(gym.target_date).toLocaleDateString() : 'N/A'}
-                      </div>
-                    </td>
+                    {activeTab === 'pending' && (
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-300">
+                          {gym.target_date ? new Date(gym.target_date).toLocaleDateString() : 'N/A'}
+                        </div>
+                      </td>
+                    )}
+                    {activeTab === 'follow_up' && (
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-300">
+                          {gym.follow_up_date ? new Date(gym.follow_up_date).toLocaleDateString() : 'N/A'}
+                        </div>
+                      </td>
+                    )}
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-300">
                         {gym.telecaller_name || 'N/A'}
