@@ -89,25 +89,23 @@ export default function TelecallerPerformancePage() {
       id: telecallerId,
       name: decodeURIComponent(telecallerName || 'Unknown')
     });
-
-    fetchGyms();
   }, [router]);
 
   useEffect(() => {
-    fetchGyms();
-  }, [activeTab, pendingFilter, pendingStartDate, pendingEndDate, followUpFilter, followUpStartDate, followUpEndDate, convertedFilter, convertedStartDate, convertedEndDate, rejectedFilter, rejectedStartDate, rejectedEndDate, noResponseFilter, noResponseStartDate, noResponseEndDate]);
+    // Only fetch gyms when telecaller data is available
+    if (telecaller?.id) {
+      fetchGyms();
+    }
+  }, [activeTab, pendingFilter, pendingStartDate, pendingEndDate, followUpFilter, followUpStartDate, followUpEndDate, convertedFilter, convertedStartDate, convertedEndDate, rejectedFilter, rejectedStartDate, rejectedEndDate, noResponseFilter, noResponseStartDate, noResponseEndDate, telecaller?.id]);
 
   const fetchGyms = async () => {
-    setLoading(true);
-    setError(null);
-
-    // Check if telecaller data is available
+    // Only proceed if telecaller data is available
     if (!telecaller?.id) {
-      setError('Telecaller information not available');
-      setGyms([]);
-      setLoading(false);
       return;
     }
+
+    setLoading(true);
+    setError(null);
 
     try {
       // Build query parameters for the manager endpoint with filtering
