@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 
 export default function TelecallerLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [user, setUser] = useState(null);
   const router = useRouter();
 
@@ -63,6 +64,8 @@ export default function TelecallerLayout({ children }) {
           isOpen={true}
           onClose={() => setSidebarOpen(false)}
           userRole="telecaller"
+          isCollapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
         />
       </div>
 
@@ -73,6 +76,8 @@ export default function TelecallerLayout({ children }) {
             isOpen={sidebarOpen}
             onClose={() => setSidebarOpen(false)}
             userRole="telecaller"
+            isCollapsed={false}
+            onToggleCollapse={() => {}}
           />
           {/* Overlay */}
           <div
@@ -83,9 +88,9 @@ export default function TelecallerLayout({ children }) {
       )}
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col lg:ml-64 h-screen overflow-hidden">
+      <div className={`flex-1 flex flex-col h-screen overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-14' : 'lg:ml-60'}`}>
         {/* Header - Fixed at top */}
-        <div className="fixed top-0 right-0 left-0 lg:left-64 z-30 bg-gray-900">
+        <div className={`fixed top-0 right-0 z-30 bg-gray-900 transition-all duration-300 ${sidebarCollapsed ? 'left-14 lg:left-14' : 'left-0 lg:left-60'}`}>
           <Header
             user={user}
             onLogout={handleLogout}

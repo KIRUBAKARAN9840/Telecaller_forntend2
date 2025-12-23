@@ -9,9 +9,11 @@ import {
   Phone,
   X,
   Target,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 
-export default function Sidebar({ isOpen, onClose, userRole }) {
+export default function Sidebar({ isOpen, onClose, userRole, isCollapsed, onToggleCollapse }) {
   const pathname = usePathname();
 
   const managerMenuItems = [
@@ -30,13 +32,25 @@ export default function Sidebar({ isOpen, onClose, userRole }) {
 
   return (
     <div className={`
-        w-64 h-full bg-gray-800 border-r border-gray-700 flex-shrink-0 flex flex-col
-        lg:relative fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-in-out
+        ${isCollapsed ? 'w-14' : 'w-60'} h-full bg-gray-800 border-r border-gray-700 flex-shrink-0 flex flex-col
+        lg:relative fixed inset-y-0 left-0 z-50 transform transition-all duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
-        {/* Header */}
-        <div className="flex items-center justify-between h-16 px-6 border-b border-gray-700">
+      {/* Header */}
+      <div className="flex items-center justify-between h-16 px-6 border-b border-gray-700">
+        {!isCollapsed && (
           <h2 className="text-xl font-bold text-white"><span className="text-[#ff5757]">Fitt</span>Bot</h2>
+        )}
+        <div className="flex items-center gap-2 ml-auto">
+          {/* Collapse/Expand button - only show on desktop */}
+          <button
+            onClick={onToggleCollapse}
+            className="hidden lg:block p-1 rounded-md text-gray-400 hover:text-white hover:bg-gray-700"
+            title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {isCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+          </button>
+          {/* Mobile close button */}
           <button
             onClick={onClose}
             className="lg:hidden p-1 rounded-md text-gray-400 hover:text-white hover:bg-gray-700"
@@ -44,50 +58,58 @@ export default function Sidebar({ isOpen, onClose, userRole }) {
             <X className="w-6 h-6" />
           </button>
         </div>
+      </div>
 
-        {/* Navigation */}
-        <nav className="mt-6 px-3">
-          <div className="space-y-1">
-            {menuItems.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
+      {/* Navigation */}
+      <nav className="mt-6 px-3">
+        <div className="space-y-1">
+          {menuItems.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={`
+                  group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200
+                  ${isActive
+                    ? 'bg-gray-700 text-white'
+                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                  }
+                `}
+                onClick={() => {
+                  if (window.innerWidth < 1024) {
+                    onClose();
+                  }
+                }}
+                title={isCollapsed ? item.name : undefined}
+              >
+                <item.icon
                   className={`
-                    group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200
-                    ${isActive
-                      ? 'bg-gray-700 text-white border-r-4 border-red-500'
-                      : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                    }
+                    ${isCollapsed ? 'mx-auto' : 'mr-3'} h-6 w-6 flex-shrink-0
+                    ${isActive ? 'text-red-500' : 'text-gray-400 group-hover:text-gray-300'}
                   `}
-                  onClick={() => {
-                    if (window.innerWidth < 1024) {
-                      onClose();
-                    }
-                  }}
-                >
-                  <item.icon
-                    className={`
-                      mr-3 h-6 w-6 flex-shrink-0
-                      ${isActive ? 'text-red-500' : 'text-gray-400 group-hover:text-gray-300'}
-                    `}
-                  />
-                  {item.name}
-                </Link>
-              );
-            })}
-          </div>
-        </nav>
+                />
+                {!isCollapsed && <span>{item.name}</span>}
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
 
-        {/* Footer */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-700">
+      {/* Footer */}
+      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-700">
+        {!isCollapsed ? (
           <div className="text-xs text-gray-500">
             <p>© 2024 FittBot</p>
             <p className="mt-1">Version 1.0.0</p>
           </div>
-        </div>
+        ) : (
+          <div className="text-xs text-gray-500 text-center">
+            <p>© 24</p>
+          </div>
+        )}
       </div>
+    </div>
   );
 }
 
@@ -95,4 +117,6 @@ Sidebar.propTypes = {
   isOpen: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   userRole: PropTypes.oneOf(['manager', 'telecaller']).isRequired,
+  isCollapsed: PropTypes.bool.isRequired,
+  onToggleCollapse: PropTypes.func.isRequired,
 };

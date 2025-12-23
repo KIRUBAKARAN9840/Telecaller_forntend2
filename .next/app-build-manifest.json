@@ -40,6 +40,26 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/portal/manager/assign-gym/page.js"
+    ],
+    "/portal/telecaller/dashboard/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/portal/telecaller/dashboard/page.js"
+    ],
+    "/portal/telecaller/layout": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/portal/telecaller/layout.js"
+    ],
+    "/portal/telecaller/tracker/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/portal/telecaller/tracker/page.js"
+    ],
+    "/portal/telecaller/calls/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/portal/telecaller/calls/page.js"
     ]
   }
 }
