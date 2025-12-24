@@ -86,9 +86,8 @@ export default function OTPVerificationForm({ mobileNumber, userType, onBack, on
 
       console.log('OTP verification successful:', data);
 
-      // Note: For web, tokens are set as cookies by the backend
-      // axios interceptors will handle automatic token attachment
-
+      // For web clients, tokens are set as HTTP-only cookies by the backend
+      // We only receive user data in the response
       console.log('Calling onLoginSuccess with user data:', data.user);
       onLoginSuccess(data.user);
     } catch (error) {
@@ -108,7 +107,7 @@ export default function OTPVerificationForm({ mobileNumber, userType, onBack, on
         ? '/telecaller/manager/send-otp'
         : '/telecaller/telecaller/send-otp';
 
-      const response = await fetch(`${endpoint}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -156,12 +155,7 @@ export default function OTPVerificationForm({ mobileNumber, userType, onBack, on
       <p className="text-gray-400 mb-2">
         Enter the 6-digit code sent to {mobileNumber.slice(0, 2)}******{mobileNumber.slice(-2)}
       </p>
-      {/* {process.env.NODE_ENV === 'development' && (
-        <p className="text-green-400 text-xs mb-4 text-center">
-          Development Mode: Test OTP is <span className="font-bold">123456</span>
-        </p>
-      )} */}
-      
+
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="flex justify-center space-x-2">
           {otp.map((digit, index) => (

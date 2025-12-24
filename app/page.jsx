@@ -24,7 +24,9 @@ export default function Home() {
 
   const handleLoginSuccess = (userData) => {
     console.log('handleLoginSuccess called with:', userData);
-    // Store user data in localStorage for dashboard use
+
+    // For web clients, tokens are set as HTTP-only cookies by the backend
+    // We only need to store the user data in localStorage
     const userWithDefaults = {
       id: userData.id || 1,
       name: userData.name || 'Admin User',
